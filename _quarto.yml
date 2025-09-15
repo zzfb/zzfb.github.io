@@ -4,7 +4,7 @@ project:
 
 website:
   description: "Machine learning articles, notebooks, and papers"
-  site-url: https://your-website-url.example.com # you must change this appropriately for RSS feeds to work properly
+  site-url: https://zzfb.github.io # you must change this appropriately for RSS feeds to work properly
   title: "Zhong's ML Notes"
   navbar:
     right:

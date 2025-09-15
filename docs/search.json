@@ -21,41 +21,6 @@
     "text": "“There are two major types of learning, in both children and in deep learning. There is 1) imitation learning (watch and repeat, i.e. pretraining, supervised finetuning), and 2) trial-and-error learning (reinforcement learning). Almost every single shocking result of deep learning, and the source of all magic is always 2. 2 is the”aha moment” when DeepSeek (or o1 etc.) discovers that it works well to re-evaluate your assumptions, backtrack, try something else, etc.” quote from Andrej Karpathy.\nWe answer four questions about DeepSeek-R1-Zero What are the contributions of DeepSeek-R1-Zero? What does the DeepSeek-R1-Zero training process look like? understand the Group Relative Policy Optimization (GRPO) algorithm in detail What makes R1-zero work, is it GRPO or something else?\nDon’t worry about these Reinforcement Learning (RL) and Large Language Model (LLM) concepts, e.g. policy, action, etc. They don’t affect the understanding, which is the purpose of this article. I translate these concepts to its corresponding terms in the context of DeepSeek-R1-Zero in the below table. If there is anything unclear, please comment. So, let’s get started!\n\n\n\nRL/LLM Concepts\nCorresponding terms in the context\n\n\n\n\nPolicy\nLLM model\n\n\nPolicy Action\nThe output of the LLM given a prompt\n\n\nPrompt\nTraining example"
   },
   {
-    "objectID": "posts/deepseek-r1/index.html#code-example",
-    "href": "posts/deepseek-r1/index.html#code-example",
-    "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
-    "section": "Code Example",
-    "text": "Code Example\n# Your code here\ndef correctness_reward_func(prompts, completions, answer, **kwargs) -&gt; list[float]:\n    responses = [completion[0]['content'] for completion in completions]\n    q = prompts[0][-1]['content']\n    extracted_responses = [extract_xml_answer(r) for r in responses]\n    print('-'*20, f\"Question:\\n{q}\", f\"\\nAnswer:\\n{answer[0]}\", f\"\\nResponse:\\n{responses[0]}\", f\"\\nExtracted:\\n{extracted_responses[0]}\")\n    return [2.0 if r == a else 0.0 for r, a in zip(extracted_responses, answer)]\n# Your code here\ndef strict_format_reward_func(completions, **kwargs) -&gt; list[float]:\n    \"\"\"Reward function that checks if the completion has a specific format.\"\"\"\n    pattern = r\"^&lt;reasoning&gt;\\n.*?\\n&lt;/reasoning&gt;\\n&lt;answer&gt;\\n.*?\\n&lt;/answer&gt;\\n$\"\n    responses = [completion[0][\"content\"] for completion in completions]\n    matches = [re.match(pattern, r) for r in responses] \n    return [0.5 if match else 0.0 for match in matches]"
-  },
-  {
-    "objectID": "posts/deepseek-r1/index.html#conclusion",
-    "href": "posts/deepseek-r1/index.html#conclusion",
-    "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
-    "section": "Conclusion",
-    "text": "Conclusion\nWrap up your thoughts here."
-  },
-  {
-    "objectID": "posts/post-with-code/index.html",
-    "href": "posts/post-with-code/index.html",
-    "title": "Post With Code",
-    "section": "",
-    "text": "This is a post with executable code."
-  },
-  {
-    "objectID": "posts/welcome/index.html",
-    "href": "posts/welcome/index.html",
-    "title": "Welcome To My Blog",
-    "section": "",
-    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "blog",
-    "section": "",
-    "text": "Explain DeepSeek-R1-Zero to My Little Aurora\n\n\n\nAI\n\nLLM\n\nRL\n\n\n\nDeepSeek-R1-Zero plain explanation\n\n\n\n\n\nSep 14, 2025\n\n\nZhong Zhang\n\n\n\n\n\nNo matching items"
-  },
-  {
     "objectID": "posts/deepseek-r1/index.html#question-1-what-are-the-contributions-of-deepseek-r1-zero",
     "href": "posts/deepseek-r1/index.html#question-1-what-are-the-contributions-of-deepseek-r1-zero",
     "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
@@ -68,6 +33,13 @@
     "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
     "section": "Question 2: What does the DeepSeek-R1-Zero training process look like?",
     "text": "Question 2: What does the DeepSeek-R1-Zero training process look like?\nThe goal of training is to “steer” the base LLM (like GPT-4o or DeepSeek V3) towards generating correct and well-formatted answers more consistently. Think of it like upgrading the model – from GPT-4o to a hypothetical “o3-mini-high,” or from DeepSeek V3 to DeepSeek-R1-Zero.\nThe left side of the below figure is the base model while the right side is the prompted version with GRPO based RL training. As you can see the left one fails at the question while the right one succeeds also with the reasoning process. The figure comes from reference 4.\n\n\n\n\nWith VS Without Reasoning\n\n\n\nHere’s how it works:\nPrompting the Model: We feed a practice problem (like the math problem about Natalia’s clips in the below table) to the current version of the LLM, which we’ll call the “old LLM.”\nGenerating Responses: run the old LLM with the practice problem as prompt several times to get answers (technically called “completions”). Some of these might be correct, some incorrect, and some might have formatting issues.\nScoring the Responses: A “reward function” evaluates each response, assigning scores based on: Correctness: How accurate the answer is. Format: Whether the response follows a desired structure (e.g., showing its steps).\nUpdating the Model: The crucial step! Using a specialized algorithm called GRPO (Generalized Relative Policy Optimization), the LLM’s internal parameters (the “weights” that control its behavior) are adjusted. These adjustments are guided by the reward scores: responses with higher scores “pull” the model’s parameters in their direction, making it more likely to generate similar responses in the future. This updated model is now the “new LLM.”\nIteration: We set the “old LLM” to be the “new LLM” (the updated version) and repeat steps 1-4 many, many times. With each iteration, the model gets progressively better at generating correct and well-formatted answers. This iterative process continues until we have a version of the LLM with significantly improved reasoning abilities – in this case, DeepSeek-R1-Zero.\nIt’s like teaching through trial and error - the model keeps attempting problems, learns from its successes and failures, and gradually becomes better at solving them. The final result is a more capable model like DeepSeek-R1-Zero.\nLet’s dive deep into reward functions a bit. The DeepSeek paper mentioned two types of rewards: accuracy and format. An implementation could be but not limited to as below."
+  },
+  {
+    "objectID": "posts/deepseek-r1/index.html#code-example",
+    "href": "posts/deepseek-r1/index.html#code-example",
+    "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
+    "section": "Code Example",
+    "text": "Code Example\n# Your code here\ndef correctness_reward_func(prompts, completions, answer, **kwargs) -&gt; list[float]:\n    responses = [completion[0]['content'] for completion in completions]\n    q = prompts[0][-1]['content']\n    extracted_responses = [extract_xml_answer(r) for r in responses]\n    print('-'*20, f\"Question:\\n{q}\", f\"\\nAnswer:\\n{answer[0]}\", f\"\\nResponse:\\n{responses[0]}\", f\"\\nExtracted:\\n{extracted_responses[0]}\")\n    return [2.0 if r == a else 0.0 for r, a in zip(extracted_responses, answer)]\n# Your code here\ndef strict_format_reward_func(completions, **kwargs) -&gt; list[float]:\n    \"\"\"Reward function that checks if the completion has a specific format.\"\"\"\n    pattern = r\"^&lt;reasoning&gt;\\n.*?\\n&lt;/reasoning&gt;\\n&lt;answer&gt;\\n.*?\\n&lt;/answer&gt;\\n$\"\n    responses = [completion[0][\"content\"] for completion in completions]\n    matches = [re.match(pattern, r) for r in responses] \n    return [0.5 if match else 0.0 for match in matches]"
   },
   {
     "objectID": "posts/deepseek-r1/index.html#question-3-understand-the-group-relative-policy-optimization-grpo-algorithm-in-detail",
@@ -89,5 +61,12 @@
     "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
     "section": "Reference",
     "text": "Reference\n\n深度强化学习(1/5)：基本概念 Deep Reinforcement Learning (1/5)\nhttps://x.com/karpathy/status/1885026028428681698\nDeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning, link\nTrain your own R1 reasoning model with Unsloth (GRPO) link\nhttps://gist.github.com/willccbb/4676755236bb08cab5f4e54a0475d6fb"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "blog",
+    "section": "",
+    "text": "Explain DeepSeek-R1-Zero to My Little Aurora\n\n\n\nAI\n\nLLM\n\nRL\n\n\n\nDeepSeek-R1-Zero plain explanation\n\n\n\n\n\nSep 14, 2025\n\n\nZhong Zhang\n\n\n\n\n\nNo matching items"
   }
 ]
