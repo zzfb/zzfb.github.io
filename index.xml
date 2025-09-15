@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>Zhong&#39;s ML Notes</title>
+<link>https://your-website-url.example.com/</link>
+<atom:link href="https://your-website-url.example.com/index.xml" rel="self" type="application/rss+xml"/>
+<description>Machine learning articles, notebooks, and papers</description>
+<generator>quarto-1.8.24</generator>
+<lastBuildDate>Sun, 14 Sep 2025 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>Explain DeepSeek-R1-Zero to My Little Aurora</title>
+  <dc:creator>Zhong Zhang</dc:creator>
+  <link>https://your-website-url.example.com/posts/deepseek-r1/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>“There are two major types of learning, in both children and in deep learning. There is 1) imitation learning (watch and repeat, i.e.&nbsp;pretraining, supervised finetuning), and 2) trial-and-error learning (reinforcement learning). Almost every single shocking result of deep learning, and the source of all <em>magic</em> is always 2. 2 is the”aha moment” when DeepSeek (or o1 etc.) discovers that it works well to re-evaluate your assumptions, backtrack, try something else, etc.” quote from Andrej Karpathy.</p>
+<p>We answer four questions about DeepSeek-R1-Zero What are the contributions of DeepSeek-R1-Zero? What does the DeepSeek-R1-Zero training process look like? understand the Group Relative Policy Optimization (GRPO) algorithm in detail What makes R1-zero work, is it GRPO or something else?</p>
+<p>Don’t worry about these Reinforcement Learning (RL) and Large Language Model (LLM) concepts, e.g.&nbsp;policy, action, etc. They don’t affect the understanding, which is the purpose of this article. I translate these concepts to its corresponding terms in the context of DeepSeek-R1-Zero in the below table. If there is anything unclear, please comment. So, let’s get started!</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>RL/LLM Concepts</th>
+<th>Corresponding terms in the context</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Policy</td>
+<td>LLM model</td>
+</tr>
+<tr class="even">
+<td>Policy Action</td>
+<td>The output of the LLM given a prompt</td>
+</tr>
+<tr class="odd">
+<td>Prompt</td>
+<td>Training example</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="question-1-what-are-the-contributions-of-deepseek-r1-zero" class="level2">
+<h2 class="anchored" data-anchor-id="question-1-what-are-the-contributions-of-deepseek-r1-zero">Question 1: What are the contributions of DeepSeek-R1-Zero?</h2>
+<p>DeepSeek-R1-Zero’s key breakthrough is proving that large language models (LLM) can develop strong reasoning abilities a.k.a problem solving skills through practice alone, without first being shown how to solve problems. Think about learning mathematics: traditionally, a teacher first demonstrates how to solve each type of problem step-by-step, and then students practice similar problems on their own. DeepSeek-R1-Zero shows that an AI can become excellent at problem-solving by skipping the demonstration phase and jumping straight to practice – learning purely from trial and error. This not only simplifies the training process but also allows the AI to discover its own creative ways of reasoning, rather than just imitating human examples.</p>
+<p>Let’s think of training an AI model like teaching a student. Credits go to Andrej Karpathy</p>
+<ul>
+<li><p><strong>Building a Foundation (Pretraining):</strong> First, the child learns basic knowledge - reading, writing, math facts. This is like “pretraining” an AI, where it absorbs vast amounts of information from the internet, building a foundation of general knowledge.</p></li>
+<li><p><strong>Showing Examples (Supervised Fine-Tuning/SFT):</strong> is like showing the student solved examples with detailed steps. A teacher explains step-by-step how to solve specific problems, similar to how models are fine-tuned on ideal step-by-step responses written by humans.</p></li>
+<li><p><strong>Practice Makes Perfect (Reinforcement Learning/RL):</strong> Finally, the child practices solving problems on their own, getting feedback on whether they got the right answer (but not how to get there). They learn through trial and error, figuring out their own strategies. This is like “Reinforcement Learning” (RL), where the AI is given problems and rewarded for finding the correct solution, even if it takes a roundabout path.</p></li>
+</ul>
+<div style="text-align: center;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://your-website-url.example.com/posts/deepseek-r1/pretraining_sft_rl.jpeg" class="img-fluid figure-img"></p>
+<figcaption>pretraining, SFT, RL</figcaption>
+</figure>
+</div>
+</div>
+<p>DeepSeek-R1-Zero demonstrates that large language models (LLM) can develop strong reasoning skills using only Reinforcement Learning (RL), without needing the traditional step of Supervised Fine-Tuning (SFT). Unlike previous methods that relied heavily on labeled data (showing the AI how to solve problems step by step) to teach models how to reason, DeepSeek-R1-Zero shows that reasoning abilities—like checking its own answers, thinking step-by-step, etc—can emerge naturally through RL alone. This breakthrough proves that models can learn to solve complex problems just by practicing and receiving feedback (correct or not), simplifying the training process and opening potentially more powerful ways to build AI reasoning capabilities.</p>
+<div style="text-align: center;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://your-website-url.example.com/posts/deepseek-r1/RL_vs_SFT.jpg" class="img-fluid figure-img"></p>
+<figcaption>Pure RL VS SFT</figcaption>
+</figure>
+</div>
+</div>
+<p>Note: this practice problem will go through this article as an example until the end.</p>
+</section>
+<section id="question-2-what-does-the-deepseek-r1-zero-training-process-look-like" class="level2">
+<h2 class="anchored" data-anchor-id="question-2-what-does-the-deepseek-r1-zero-training-process-look-like">Question 2: What does the DeepSeek-R1-Zero training process look like?</h2>
+<p>The goal of training is to “steer” the base LLM (like GPT-4o or DeepSeek V3) towards generating correct and well-formatted answers more consistently. Think of it like upgrading the model – from GPT-4o to a hypothetical “o3-mini-high,” or from DeepSeek V3 to DeepSeek-R1-Zero.</p>
+<p>The left side of the below figure is the base model while the right side is the prompted version with GRPO based RL training. As you can see the left one fails at the question while the right one succeeds also with the reasoning process. The figure comes from reference 4.</p>
+<div style="text-align: center;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://your-website-url.example.com/posts/deepseek-r1/with_vs_without_reasoning.jpg" class="img-fluid figure-img"></p>
+<figcaption>With VS Without Reasoning</figcaption>
+</figure>
+</div>
+</div>
+<p>Here’s how it works:</p>
+<p>Prompting the Model: We feed a practice problem (like the math problem about Natalia’s clips in the below table) to the current version of the LLM, which we’ll call the “old LLM.”</p>
+<p>Generating Responses: run the old LLM with the practice problem as prompt several times to get answers (technically called “completions”). Some of these might be correct, some incorrect, and some might have formatting issues.</p>
+<p>Scoring the Responses: A “reward function” evaluates each response, assigning scores based on: Correctness: How accurate the answer is. Format: Whether the response follows a desired structure (e.g., showing its steps).</p>
+<p>Updating the Model: The crucial step! Using a specialized algorithm called GRPO (Generalized Relative Policy Optimization), the LLM’s internal parameters (the “weights” that control its behavior) are adjusted. These adjustments are guided by the reward scores: responses with higher scores “pull” the model’s parameters in their direction, making it more likely to generate similar responses in the future. This updated model is now the “new LLM.”</p>
+<p>Iteration: We set the “old LLM” to be the “new LLM” (the updated version) and repeat steps 1-4 many, many times. With each iteration, the model gets progressively better at generating correct and well-formatted answers. This iterative process continues until we have a version of the LLM with significantly improved reasoning abilities – in this case, DeepSeek-R1-Zero.</p>
+<p>It’s like teaching through trial and error - the model keeps attempting problems, learns from its successes and failures, and gradually becomes better at solving them. The final result is a more capable model like DeepSeek-R1-Zero.</p>
+<p>Let’s dive deep into reward functions a bit. The DeepSeek paper mentioned two types of rewards: accuracy and format. An implementation could be but not limited to as below.</p>
+</section>
+<section id="code-example" class="level2">
+<h2 class="anchored" data-anchor-id="code-example">Code Example</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Your code here</span></span>
+<span id="cb1-2"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> correctness_reward_func(prompts, completions, answer, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">list</span>[<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">float</span>]:</span>
+<span id="cb1-3">    responses <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> [completion[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>][<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'content'</span>] <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> completion <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> completions]</span>
+<span id="cb1-4">    q <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> prompts[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>][<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>][<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'content'</span>]</span>
+<span id="cb1-5">    extracted_responses <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> [extract_xml_answer(r) <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> r <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> responses]</span>
+<span id="cb1-6">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'-'</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>, <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"Question:</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>q<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>, <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">Answer:</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>answer[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>]<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>, <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">Response:</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>responses[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>]<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>, <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">Extracted:</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>extracted_responses[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>]<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb1-7">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> [<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2.0</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> r <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> a <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">else</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.0</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> r, a <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">zip</span>(extracted_responses, answer)]</span></code></pre></div></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Your code here</span></span>
+<span id="cb2-2"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> strict_format_reward_func(completions, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">list</span>[<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">float</span>]:</span>
+<span id="cb2-3">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">"""Reward function that checks if the completion has a specific format."""</span></span>
+<span id="cb2-4">    pattern <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
+background-color: null;
+font-style: inherit;">r"</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">^</span><span class="vs" style="color: #20794D;
+background-color: null;
+font-style: inherit;">&lt;reasoning&gt;</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">.</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*?</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="vs" style="color: #20794D;
+background-color: null;
+font-style: inherit;">&lt;/reasoning&gt;</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="vs" style="color: #20794D;
+background-color: null;
+font-style: inherit;">&lt;answer&gt;</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">.</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*?</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="vs" style="color: #20794D;
+background-color: null;
+font-style: inherit;">&lt;/answer&gt;</span><span class="ch" style="color: #20794D;
+background-color: null;
+font-style: inherit;">\n</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">$</span><span class="vs" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span></span>
+<span id="cb2-5">    responses <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> [completion[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>][<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"content"</span>] <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> completion <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> completions]</span>
+<span id="cb2-6">    matches <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> [re.match(pattern, r) <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> r <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> responses] </span>
+<span id="cb2-7">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> [<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> match <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">else</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.0</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> match <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> matches]</span></code></pre></div></div>
+</section>
+<section id="question-3-understand-the-group-relative-policy-optimization-grpo-algorithm-in-detail" class="level2">
+<h2 class="anchored" data-anchor-id="question-3-understand-the-group-relative-policy-optimization-grpo-algorithm-in-detail">Question 3: understand the Group Relative Policy Optimization (GRPO) algorithm in detail</h2>
+<div style="text-align: center;">
+<p><img src="https://your-website-url.example.com/posts/deepseek-r1/grpo1.jpg" class="img-fluid"> <img src="https://your-website-url.example.com/posts/deepseek-r1/grpo2.jpg" class="img-fluid"></p>
+</div>
+<p>The GRPO algorithm, as described in the paper, begins by sampling a group of outputs {o_1, o_2, …, o_G} from the old LLM (denoted as π_θold). This is done by feeding the same training example (the prompt, q) to the old LLM multiple times and collecting the different responses it generates.</p>
+<p>The training then focuses on maximizing the objective function (equation (1)). This objective function is, at its core, a complex function of the new LLM’s parameters (θ). Standard gradient descent algorithms can be used to efficiently update these parameters and maximize the function’s value.</p>
+<p>The key to understanding how GRPO improves the LLM lies in maximizing the objective function (equation (1)). And the heart of that process is within the part highlighted by the “red rectangle.”</p>
+<p>Let’s zoom into the red rectangle, which contains two parts: (1) probability ratio (2) Advantage function Ai. <strong>Advantage function</strong> Ai is defined in the equation (3) and pretty straightforward. A_i tells us whether a particular output (o_i) is better or worse than the average output for a given prompt. If the reward (R_i) for o_i is higher than the average reward, A_i is positive (good). If the reward for o_i is lower than the average reward, A_i is negative (bad).</p>
+<p><strong>Probability ratio:</strong> measures how much the probability of generating the completion o_i for prompt q has changed between the new policy π_and the old policy π_{_{old}}. - Ratio &gt; 1: The new LLM is more likely to generate o_i than the old LLM. - Ratio &lt; 1: The new LLM is less likely to generate o_i than the old LLM.</p>
+<p><strong>The Magic: Multiplying Ratio and Advantage</strong> - If A_i &gt; 0 (good completion) and Ratio &gt; 1 (new policy makes it more likely), we want to encourage this change. We want to increase the probability of generating this good completion even more. - If A_i &gt; 0 and Ratio &lt; 1 (new policy makes it less likely), we want to discourage this change. We want to increase the probability of generating this good completion. - If A_i &lt; 0 (bad completion) and Ratio &gt; 1 (new policy makes it more likely), we want to discourage this change. We want to decrease the probability of generating this bad completion. - If A_i &lt; 0 and Ratio &lt; 1 (new policy makes it less likely), we want to encourage this change. We want to decrease the probability of generating this bad completion even further.</p>
+<p>Beyond the Red Rectangle: Stability and Generalization</p>
+<p>The “clip” and “KL” terms in the full objective function play important roles in ensuring the training process remains stable and the model generalizes well:</p>
+<ul>
+<li><p>Clipping (clip): The clip function acts like a “brake,” preventing the probability ratio from changing too drastically in a single update. This avoids large, potentially destabilizing parameter adjustments.</p></li>
+<li><p>KL Divergence (KL): The KL divergence term measures how much the new LLM’s behavior differs from a “reference” policy (often the old LLM). By penalizing large deviations, we encourage the model to improve incrementally and retain some of its desirable characteristics. This helps the model perform well on new, unseen problems and encourages exploration of different solutions.</p></li>
+</ul>
+</section>
+<section id="question-4-what-makes-r1-zero-work-is-it-grpo-or-something-else" class="level2">
+<h2 class="anchored" data-anchor-id="question-4-what-makes-r1-zero-work-is-it-grpo-or-something-else">Question 4: What makes R1-zero work, is it GRPO or something else?</h2>
+<p>As an engineer with no prior LLM/RL experience, I found the GRPO algorithm surprisingly understandable after just a weekend of study. It’s essentially a refined version of the established PPO algorithm, so for experts in the field, it’s likely not a revolutionary leap. The real challenge, and where DeepSeek-R1-Zero truly shines, is in the engineering implementation, for example how to define the reward functions. This highlights the critical importance of exceptionally talented engineers, perhaps even more so than simply acquiring more computing power.</p>
+<p>The idea of using pure RL to improve a base model isn’t new, but previous attempts haven’t matched DeepSeek’s results. I suspect two key factors are at play: first, a very strong foundation in the base model itself; and second, the quality of the training data (the practice problems). DeepSeek hasn’t open-sourced their training data, which is a strong indication of its crucial and proprietary nature.</p>
+<p>In essence, DeepSeek-R1-Zero’s success likely boils down to a potent combination of: brilliant engineering, carefully curated training examples, and a robust base model.</p>
+<p>This article is a collaboration with DeepSeek-R1, Gemini 2.0 Flash Thinking Experimental 01-21 (Google really needs to work hard on the naming), ChatGPT o3-mini-high, Claude. Gemini is slightly better than R1, but both of them are better than o3-mini-high in terms of reasoning. Claude is still really good at polishing writing but Gemini 2.0 Pro Experimental 02-05 is at least comparable. The conclusion is there is no need to be a member of Claude anymore. :-).</p>
+</section>
+<section id="reference" class="level2">
+<h2 class="anchored" data-anchor-id="reference">Reference</h2>
+<ul>
+<li>深度强化学习(1/5)：基本概念 Deep Reinforcement Learning (1/5)</li>
+<li>https://x.com/karpathy/status/1885026028428681698</li>
+<li>DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning, link</li>
+<li>Train your own R1 reasoning model with Unsloth (GRPO) link</li>
+<li>https://gist.github.com/willccbb/4676755236bb08cab5f4e54a0475d6fb</li>
+</ul>
+
+
+
+</section>
+
+ ]]></description>
+  <category>AI</category>
+  <category>LLM</category>
+  <category>RL</category>
+  <guid>https://your-website-url.example.com/posts/deepseek-r1/</guid>
+  <pubDate>Sun, 14 Sep 2025 04:00:00 GMT</pubDate>
+</item>
+</channel>
+</rss>

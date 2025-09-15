@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.24">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Zhong Zhang">
+<meta name="dcterms.date" content="2025-09-14">
+<meta name="description" content="DeepSeek-R1-Zero plain explanation">
+
+<title>Explain DeepSeek-R1-Zero to My Little Aurora – Zhong’s ML Notes</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5b4ad623e5705c0698d39aec6f10cf02.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Zhong’s ML Notes</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/zhong-zhang-59b63a23/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Explain DeepSeek-R1-Zero to My Little Aurora</h1>
+                  <div>
+        <div class="description">
+          DeepSeek-R1-Zero plain explanation
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">AI</div>
+                <div class="quarto-category">LLM</div>
+                <div class="quarto-category">RL</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Zhong Zhang </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">September 14, 2025</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#question-1-what-are-the-contributions-of-deepseek-r1-zero" id="toc-question-1-what-are-the-contributions-of-deepseek-r1-zero" class="nav-link" data-scroll-target="#question-1-what-are-the-contributions-of-deepseek-r1-zero">Question 1: What are the contributions of DeepSeek-R1-Zero?</a></li>
+  <li><a href="#question-2-what-does-the-deepseek-r1-zero-training-process-look-like" id="toc-question-2-what-does-the-deepseek-r1-zero-training-process-look-like" class="nav-link" data-scroll-target="#question-2-what-does-the-deepseek-r1-zero-training-process-look-like">Question 2: What does the DeepSeek-R1-Zero training process look like?</a></li>
+  <li><a href="#code-example" id="toc-code-example" class="nav-link" data-scroll-target="#code-example">Code Example</a></li>
+  <li><a href="#question-3-understand-the-group-relative-policy-optimization-grpo-algorithm-in-detail" id="toc-question-3-understand-the-group-relative-policy-optimization-grpo-algorithm-in-detail" class="nav-link" data-scroll-target="#question-3-understand-the-group-relative-policy-optimization-grpo-algorithm-in-detail">Question 3: understand the Group Relative Policy Optimization (GRPO) algorithm in detail</a></li>
+  <li><a href="#question-4-what-makes-r1-zero-work-is-it-grpo-or-something-else" id="toc-question-4-what-makes-r1-zero-work-is-it-grpo-or-something-else" class="nav-link" data-scroll-target="#question-4-what-makes-r1-zero-work-is-it-grpo-or-something-else">Question 4: What makes R1-zero work, is it GRPO or something else?</a></li>
+  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>“There are two major types of learning, in both children and in deep learning. There is 1) imitation learning (watch and repeat, i.e.&nbsp;pretraining, supervised finetuning), and 2) trial-and-error learning (reinforcement learning). Almost every single shocking result of deep learning, and the source of all <em>magic</em> is always 2. 2 is the”aha moment” when DeepSeek (or o1 etc.) discovers that it works well to re-evaluate your assumptions, backtrack, try something else, etc.” quote from Andrej Karpathy.</p>
+<p>We answer four questions about DeepSeek-R1-Zero What are the contributions of DeepSeek-R1-Zero? What does the DeepSeek-R1-Zero training process look like? understand the Group Relative Policy Optimization (GRPO) algorithm in detail What makes R1-zero work, is it GRPO or something else?</p>
+<p>Don’t worry about these Reinforcement Learning (RL) and Large Language Model (LLM) concepts, e.g.&nbsp;policy, action, etc. They don’t affect the understanding, which is the purpose of this article. I translate these concepts to its corresponding terms in the context of DeepSeek-R1-Zero in the below table. If there is anything unclear, please comment. So, let’s get started!</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>RL/LLM Concepts</th>
+<th>Corresponding terms in the context</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Policy</td>
+<td>LLM model</td>
+</tr>
+<tr class="even">
+<td>Policy Action</td>
+<td>The output of the LLM given a prompt</td>
+</tr>
+<tr class="odd">
+<td>Prompt</td>
+<td>Training example</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="question-1-what-are-the-contributions-of-deepseek-r1-zero" class="level2">
+<h2 class="anchored" data-anchor-id="question-1-what-are-the-contributions-of-deepseek-r1-zero">Question 1: What are the contributions of DeepSeek-R1-Zero?</h2>
+<p>DeepSeek-R1-Zero’s key breakthrough is proving that large language models (LLM) can develop strong reasoning abilities a.k.a problem solving skills through practice alone, without first being shown how to solve problems. Think about learning mathematics: traditionally, a teacher first demonstrates how to solve each type of problem step-by-step, and then students practice similar problems on their own. DeepSeek-R1-Zero shows that an AI can become excellent at problem-solving by skipping the demonstration phase and jumping straight to practice – learning purely from trial and error. This not only simplifies the training process but also allows the AI to discover its own creative ways of reasoning, rather than just imitating human examples.</p>
+<p>Let’s think of training an AI model like teaching a student. Credits go to Andrej Karpathy</p>
+<ul>
+<li><p><strong>Building a Foundation (Pretraining):</strong> First, the child learns basic knowledge - reading, writing, math facts. This is like “pretraining” an AI, where it absorbs vast amounts of information from the internet, building a foundation of general knowledge.</p></li>
+<li><p><strong>Showing Examples (Supervised Fine-Tuning/SFT):</strong> is like showing the student solved examples with detailed steps. A teacher explains step-by-step how to solve specific problems, similar to how models are fine-tuned on ideal step-by-step responses written by humans.</p></li>
+<li><p><strong>Practice Makes Perfect (Reinforcement Learning/RL):</strong> Finally, the child practices solving problems on their own, getting feedback on whether they got the right answer (but not how to get there). They learn through trial and error, figuring out their own strategies. This is like “Reinforcement Learning” (RL), where the AI is given problems and rewarded for finding the correct solution, even if it takes a roundabout path.</p></li>
+</ul>
+<div style="text-align: center;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="pretraining_sft_rl.jpeg" class="img-fluid figure-img"></p>
+<figcaption>pretraining, SFT, RL</figcaption>
+</figure>
+</div>
+</div>
+<p>DeepSeek-R1-Zero demonstrates that large language models (LLM) can develop strong reasoning skills using only Reinforcement Learning (RL), without needing the traditional step of Supervised Fine-Tuning (SFT). Unlike previous methods that relied heavily on labeled data (showing the AI how to solve problems step by step) to teach models how to reason, DeepSeek-R1-Zero shows that reasoning abilities—like checking its own answers, thinking step-by-step, etc—can emerge naturally through RL alone. This breakthrough proves that models can learn to solve complex problems just by practicing and receiving feedback (correct or not), simplifying the training process and opening potentially more powerful ways to build AI reasoning capabilities.</p>
+<div style="text-align: center;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="RL_vs_SFT.jpg" class="img-fluid figure-img"></p>
+<figcaption>Pure RL VS SFT</figcaption>
+</figure>
+</div>
+</div>
+<p>Note: this practice problem will go through this article as an example until the end.</p>
+</section>
+<section id="question-2-what-does-the-deepseek-r1-zero-training-process-look-like" class="level2">
+<h2 class="anchored" data-anchor-id="question-2-what-does-the-deepseek-r1-zero-training-process-look-like">Question 2: What does the DeepSeek-R1-Zero training process look like?</h2>
+<p>The goal of training is to “steer” the base LLM (like GPT-4o or DeepSeek V3) towards generating correct and well-formatted answers more consistently. Think of it like upgrading the model – from GPT-4o to a hypothetical “o3-mini-high,” or from DeepSeek V3 to DeepSeek-R1-Zero.</p>
+<p>The left side of the below figure is the base model while the right side is the prompted version with GRPO based RL training. As you can see the left one fails at the question while the right one succeeds also with the reasoning process. The figure comes from reference 4.</p>
+<div style="text-align: center;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="with_vs_without_reasoning.jpg" class="img-fluid figure-img"></p>
+<figcaption>With VS Without Reasoning</figcaption>
+</figure>
+</div>
+</div>
+<p>Here’s how it works:</p>
+<p>Prompting the Model: We feed a practice problem (like the math problem about Natalia’s clips in the below table) to the current version of the LLM, which we’ll call the “old LLM.”</p>
+<p>Generating Responses: run the old LLM with the practice problem as prompt several times to get answers (technically called “completions”). Some of these might be correct, some incorrect, and some might have formatting issues.</p>
+<p>Scoring the Responses: A “reward function” evaluates each response, assigning scores based on: Correctness: How accurate the answer is. Format: Whether the response follows a desired structure (e.g., showing its steps).</p>
+<p>Updating the Model: The crucial step! Using a specialized algorithm called GRPO (Generalized Relative Policy Optimization), the LLM’s internal parameters (the “weights” that control its behavior) are adjusted. These adjustments are guided by the reward scores: responses with higher scores “pull” the model’s parameters in their direction, making it more likely to generate similar responses in the future. This updated model is now the “new LLM.”</p>
+<p>Iteration: We set the “old LLM” to be the “new LLM” (the updated version) and repeat steps 1-4 many, many times. With each iteration, the model gets progressively better at generating correct and well-formatted answers. This iterative process continues until we have a version of the LLM with significantly improved reasoning abilities – in this case, DeepSeek-R1-Zero.</p>
+<p>It’s like teaching through trial and error - the model keeps attempting problems, learns from its successes and failures, and gradually becomes better at solving them. The final result is a more capable model like DeepSeek-R1-Zero.</p>
+<p>Let’s dive deep into reward functions a bit. The DeepSeek paper mentioned two types of rewards: accuracy and format. An implementation could be but not limited to as below.</p>
+</section>
+<section id="code-example" class="level2">
+<h2 class="anchored" data-anchor-id="code-example">Code Example</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Your code here</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> correctness_reward_func(prompts, completions, answer, <span class="op">**</span>kwargs) <span class="op">-&gt;</span> <span class="bu">list</span>[<span class="bu">float</span>]:</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    responses <span class="op">=</span> [completion[<span class="dv">0</span>][<span class="st">'content'</span>] <span class="cf">for</span> completion <span class="kw">in</span> completions]</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    q <span class="op">=</span> prompts[<span class="dv">0</span>][<span class="op">-</span><span class="dv">1</span>][<span class="st">'content'</span>]</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    extracted_responses <span class="op">=</span> [extract_xml_answer(r) <span class="cf">for</span> r <span class="kw">in</span> responses]</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'-'</span><span class="op">*</span><span class="dv">20</span>, <span class="ss">f"Question:</span><span class="ch">\n</span><span class="sc">{</span>q<span class="sc">}</span><span class="ss">"</span>, <span class="ss">f"</span><span class="ch">\n</span><span class="ss">Answer:</span><span class="ch">\n</span><span class="sc">{</span>answer[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">"</span>, <span class="ss">f"</span><span class="ch">\n</span><span class="ss">Response:</span><span class="ch">\n</span><span class="sc">{</span>responses[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">"</span>, <span class="ss">f"</span><span class="ch">\n</span><span class="ss">Extracted:</span><span class="ch">\n</span><span class="sc">{</span>extracted_responses[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [<span class="fl">2.0</span> <span class="cf">if</span> r <span class="op">==</span> a <span class="cf">else</span> <span class="fl">0.0</span> <span class="cf">for</span> r, a <span class="kw">in</span> <span class="bu">zip</span>(extracted_responses, answer)]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Your code here</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> strict_format_reward_func(completions, <span class="op">**</span>kwargs) <span class="op">-&gt;</span> <span class="bu">list</span>[<span class="bu">float</span>]:</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Reward function that checks if the completion has a specific format."""</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    pattern <span class="op">=</span> <span class="vs">r"</span><span class="dv">^</span><span class="vs">&lt;reasoning&gt;</span><span class="ch">\n</span><span class="dv">.</span><span class="op">*?</span><span class="ch">\n</span><span class="vs">&lt;/reasoning&gt;</span><span class="ch">\n</span><span class="vs">&lt;answer&gt;</span><span class="ch">\n</span><span class="dv">.</span><span class="op">*?</span><span class="ch">\n</span><span class="vs">&lt;/answer&gt;</span><span class="ch">\n</span><span class="dv">$</span><span class="vs">"</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    responses <span class="op">=</span> [completion[<span class="dv">0</span>][<span class="st">"content"</span>] <span class="cf">for</span> completion <span class="kw">in</span> completions]</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    matches <span class="op">=</span> [re.match(pattern, r) <span class="cf">for</span> r <span class="kw">in</span> responses] </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [<span class="fl">0.5</span> <span class="cf">if</span> match <span class="cf">else</span> <span class="fl">0.0</span> <span class="cf">for</span> match <span class="kw">in</span> matches]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="question-3-understand-the-group-relative-policy-optimization-grpo-algorithm-in-detail" class="level2">
+<h2 class="anchored" data-anchor-id="question-3-understand-the-group-relative-policy-optimization-grpo-algorithm-in-detail">Question 3: understand the Group Relative Policy Optimization (GRPO) algorithm in detail</h2>
+<div style="text-align: center;">
+<p><img src="grpo1.jpg" class="img-fluid"> <img src="grpo2.jpg" class="img-fluid"></p>
+</div>
+<p>The GRPO algorithm, as described in the paper, begins by sampling a group of outputs {o_1, o_2, …, o_G} from the old LLM (denoted as π_θold). This is done by feeding the same training example (the prompt, q) to the old LLM multiple times and collecting the different responses it generates.</p>
+<p>The training then focuses on maximizing the objective function (equation (1)). This objective function is, at its core, a complex function of the new LLM’s parameters (θ). Standard gradient descent algorithms can be used to efficiently update these parameters and maximize the function’s value.</p>
+<p>The key to understanding how GRPO improves the LLM lies in maximizing the objective function (equation (1)). And the heart of that process is within the part highlighted by the “red rectangle.”</p>
+<p>Let’s zoom into the red rectangle, which contains two parts: (1) probability ratio (2) Advantage function Ai. <strong>Advantage function</strong> Ai is defined in the equation (3) and pretty straightforward. A_i tells us whether a particular output (o_i) is better or worse than the average output for a given prompt. If the reward (R_i) for o_i is higher than the average reward, A_i is positive (good). If the reward for o_i is lower than the average reward, A_i is negative (bad).</p>
+<p><strong>Probability ratio:</strong> measures how much the probability of generating the completion o_i for prompt q has changed between the new policy π_and the old policy π_{_{old}}. - Ratio &gt; 1: The new LLM is more likely to generate o_i than the old LLM. - Ratio &lt; 1: The new LLM is less likely to generate o_i than the old LLM.</p>
+<p><strong>The Magic: Multiplying Ratio and Advantage</strong> - If A_i &gt; 0 (good completion) and Ratio &gt; 1 (new policy makes it more likely), we want to encourage this change. We want to increase the probability of generating this good completion even more. - If A_i &gt; 0 and Ratio &lt; 1 (new policy makes it less likely), we want to discourage this change. We want to increase the probability of generating this good completion. - If A_i &lt; 0 (bad completion) and Ratio &gt; 1 (new policy makes it more likely), we want to discourage this change. We want to decrease the probability of generating this bad completion. - If A_i &lt; 0 and Ratio &lt; 1 (new policy makes it less likely), we want to encourage this change. We want to decrease the probability of generating this bad completion even further.</p>
+<p>Beyond the Red Rectangle: Stability and Generalization</p>
+<p>The “clip” and “KL” terms in the full objective function play important roles in ensuring the training process remains stable and the model generalizes well:</p>
+<ul>
+<li><p>Clipping (clip): The clip function acts like a “brake,” preventing the probability ratio from changing too drastically in a single update. This avoids large, potentially destabilizing parameter adjustments.</p></li>
+<li><p>KL Divergence (KL): The KL divergence term measures how much the new LLM’s behavior differs from a “reference” policy (often the old LLM). By penalizing large deviations, we encourage the model to improve incrementally and retain some of its desirable characteristics. This helps the model perform well on new, unseen problems and encourages exploration of different solutions.</p></li>
+</ul>
+</section>
+<section id="question-4-what-makes-r1-zero-work-is-it-grpo-or-something-else" class="level2">
+<h2 class="anchored" data-anchor-id="question-4-what-makes-r1-zero-work-is-it-grpo-or-something-else">Question 4: What makes R1-zero work, is it GRPO or something else?</h2>
+<p>As an engineer with no prior LLM/RL experience, I found the GRPO algorithm surprisingly understandable after just a weekend of study. It’s essentially a refined version of the established PPO algorithm, so for experts in the field, it’s likely not a revolutionary leap. The real challenge, and where DeepSeek-R1-Zero truly shines, is in the engineering implementation, for example how to define the reward functions. This highlights the critical importance of exceptionally talented engineers, perhaps even more so than simply acquiring more computing power.</p>
+<p>The idea of using pure RL to improve a base model isn’t new, but previous attempts haven’t matched DeepSeek’s results. I suspect two key factors are at play: first, a very strong foundation in the base model itself; and second, the quality of the training data (the practice problems). DeepSeek hasn’t open-sourced their training data, which is a strong indication of its crucial and proprietary nature.</p>
+<p>In essence, DeepSeek-R1-Zero’s success likely boils down to a potent combination of: brilliant engineering, carefully curated training examples, and a robust base model.</p>
+<p>This article is a collaboration with DeepSeek-R1, Gemini 2.0 Flash Thinking Experimental 01-21 (Google really needs to work hard on the naming), ChatGPT o3-mini-high, Claude. Gemini is slightly better than R1, but both of them are better than o3-mini-high in terms of reasoning. Claude is still really good at polishing writing but Gemini 2.0 Pro Experimental 02-05 is at least comparable. The conclusion is there is no need to be a member of Claude anymore. :-).</p>
+</section>
+<section id="reference" class="level2">
+<h2 class="anchored" data-anchor-id="reference">Reference</h2>
+<ul>
+<li>深度强化学习(1/5)：基本概念 Deep Reinforcement Learning (1/5)</li>
+<li>https://x.com/karpathy/status/1885026028428681698</li>
+<li>DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning, link</li>
+<li>Train your own R1 reasoning model with Unsloth (GRPO) link</li>
+<li>https://gist.github.com/willccbb/4676755236bb08cab5f4e54a0475d6fb</li>
+</ul>
+
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/your-website-url\.example\.com");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
