@@ -1,0 +1,93 @@
+[
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "Hi! I write about ML, Recommendations, LLM."
+  },
+  {
+    "objectID": "posts/deepseek-r1/index.html",
+    "href": "posts/deepseek-r1/index.html",
+    "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
+    "section": "",
+    "text": "“There are two major types of learning, in both children and in deep learning. There is 1) imitation learning (watch and repeat, i.e. pretraining, supervised finetuning), and 2) trial-and-error learning (reinforcement learning). Almost every single shocking result of deep learning, and the source of all magic is always 2. 2 is the”aha moment” when DeepSeek (or o1 etc.) discovers that it works well to re-evaluate your assumptions, backtrack, try something else, etc.” quote from Andrej Karpathy.\nWe answer four questions about DeepSeek-R1-Zero What are the contributions of DeepSeek-R1-Zero? What does the DeepSeek-R1-Zero training process look like? understand the Group Relative Policy Optimization (GRPO) algorithm in detail What makes R1-zero work, is it GRPO or something else?\nDon’t worry about these Reinforcement Learning (RL) and Large Language Model (LLM) concepts, e.g. policy, action, etc. They don’t affect the understanding, which is the purpose of this article. I translate these concepts to its corresponding terms in the context of DeepSeek-R1-Zero in the below table. If there is anything unclear, please comment. So, let’s get started!\n\n\n\nRL/LLM Concepts\nCorresponding terms in the context\n\n\n\n\nPolicy\nLLM model\n\n\nPolicy Action\nThe output of the LLM given a prompt\n\n\nPrompt\nTraining example"
+  },
+  {
+    "objectID": "posts/deepseek-r1/index.html#introduction",
+    "href": "posts/deepseek-r1/index.html#introduction",
+    "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
+    "section": "",
+    "text": "“There are two major types of learning, in both children and in deep learning. There is 1) imitation learning (watch and repeat, i.e. pretraining, supervised finetuning), and 2) trial-and-error learning (reinforcement learning). Almost every single shocking result of deep learning, and the source of all magic is always 2. 2 is the”aha moment” when DeepSeek (or o1 etc.) discovers that it works well to re-evaluate your assumptions, backtrack, try something else, etc.” quote from Andrej Karpathy.\nWe answer four questions about DeepSeek-R1-Zero What are the contributions of DeepSeek-R1-Zero? What does the DeepSeek-R1-Zero training process look like? understand the Group Relative Policy Optimization (GRPO) algorithm in detail What makes R1-zero work, is it GRPO or something else?\nDon’t worry about these Reinforcement Learning (RL) and Large Language Model (LLM) concepts, e.g. policy, action, etc. They don’t affect the understanding, which is the purpose of this article. I translate these concepts to its corresponding terms in the context of DeepSeek-R1-Zero in the below table. If there is anything unclear, please comment. So, let’s get started!\n\n\n\nRL/LLM Concepts\nCorresponding terms in the context\n\n\n\n\nPolicy\nLLM model\n\n\nPolicy Action\nThe output of the LLM given a prompt\n\n\nPrompt\nTraining example"
+  },
+  {
+    "objectID": "posts/deepseek-r1/index.html#code-example",
+    "href": "posts/deepseek-r1/index.html#code-example",
+    "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
+    "section": "Code Example",
+    "text": "Code Example\n# Your code here\ndef correctness_reward_func(prompts, completions, answer, **kwargs) -&gt; list[float]:\n    responses = [completion[0]['content'] for completion in completions]\n    q = prompts[0][-1]['content']\n    extracted_responses = [extract_xml_answer(r) for r in responses]\n    print('-'*20, f\"Question:\\n{q}\", f\"\\nAnswer:\\n{answer[0]}\", f\"\\nResponse:\\n{responses[0]}\", f\"\\nExtracted:\\n{extracted_responses[0]}\")\n    return [2.0 if r == a else 0.0 for r, a in zip(extracted_responses, answer)]\n# Your code here\ndef strict_format_reward_func(completions, **kwargs) -&gt; list[float]:\n    \"\"\"Reward function that checks if the completion has a specific format.\"\"\"\n    pattern = r\"^&lt;reasoning&gt;\\n.*?\\n&lt;/reasoning&gt;\\n&lt;answer&gt;\\n.*?\\n&lt;/answer&gt;\\n$\"\n    responses = [completion[0][\"content\"] for completion in completions]\n    matches = [re.match(pattern, r) for r in responses] \n    return [0.5 if match else 0.0 for match in matches]"
+  },
+  {
+    "objectID": "posts/deepseek-r1/index.html#conclusion",
+    "href": "posts/deepseek-r1/index.html#conclusion",
+    "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
+    "section": "Conclusion",
+    "text": "Conclusion\nWrap up your thoughts here."
+  },
+  {
+    "objectID": "posts/post-with-code/index.html",
+    "href": "posts/post-with-code/index.html",
+    "title": "Post With Code",
+    "section": "",
+    "text": "This is a post with executable code."
+  },
+  {
+    "objectID": "posts/welcome/index.html",
+    "href": "posts/welcome/index.html",
+    "title": "Welcome To My Blog",
+    "section": "",
+    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "blog",
+    "section": "",
+    "text": "Explain DeepSeek-R1-Zero to My Little Aurora\n\n\n\nAI\n\nLLM\n\nRL\n\n\n\nDeepSeek-R1-Zero plain explanation\n\n\n\n\n\nSep 14, 2025\n\n\nZhong Zhang\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "posts/deepseek-r1/index.html#question-1-what-are-the-contributions-of-deepseek-r1-zero",
+    "href": "posts/deepseek-r1/index.html#question-1-what-are-the-contributions-of-deepseek-r1-zero",
+    "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
+    "section": "Question 1: What are the contributions of DeepSeek-R1-Zero?",
+    "text": "Question 1: What are the contributions of DeepSeek-R1-Zero?\nDeepSeek-R1-Zero’s key breakthrough is proving that large language models (LLM) can develop strong reasoning abilities a.k.a problem solving skills through practice alone, without first being shown how to solve problems. Think about learning mathematics: traditionally, a teacher first demonstrates how to solve each type of problem step-by-step, and then students practice similar problems on their own. DeepSeek-R1-Zero shows that an AI can become excellent at problem-solving by skipping the demonstration phase and jumping straight to practice – learning purely from trial and error. This not only simplifies the training process but also allows the AI to discover its own creative ways of reasoning, rather than just imitating human examples.\nLet’s think of training an AI model like teaching a student. Credits go to Andrej Karpathy\n\nBuilding a Foundation (Pretraining): First, the child learns basic knowledge - reading, writing, math facts. This is like “pretraining” an AI, where it absorbs vast amounts of information from the internet, building a foundation of general knowledge.\nShowing Examples (Supervised Fine-Tuning/SFT): is like showing the student solved examples with detailed steps. A teacher explains step-by-step how to solve specific problems, similar to how models are fine-tuned on ideal step-by-step responses written by humans.\nPractice Makes Perfect (Reinforcement Learning/RL): Finally, the child practices solving problems on their own, getting feedback on whether they got the right answer (but not how to get there). They learn through trial and error, figuring out their own strategies. This is like “Reinforcement Learning” (RL), where the AI is given problems and rewarded for finding the correct solution, even if it takes a roundabout path.\n\n\n\n\n\npretraining, SFT, RL\n\n\n\nDeepSeek-R1-Zero demonstrates that large language models (LLM) can develop strong reasoning skills using only Reinforcement Learning (RL), without needing the traditional step of Supervised Fine-Tuning (SFT). Unlike previous methods that relied heavily on labeled data (showing the AI how to solve problems step by step) to teach models how to reason, DeepSeek-R1-Zero shows that reasoning abilities—like checking its own answers, thinking step-by-step, etc—can emerge naturally through RL alone. This breakthrough proves that models can learn to solve complex problems just by practicing and receiving feedback (correct or not), simplifying the training process and opening potentially more powerful ways to build AI reasoning capabilities.\n\n\n\n\nPure RL VS SFT\n\n\n\nNote: this practice problem will go through this article as an example until the end."
+  },
+  {
+    "objectID": "posts/deepseek-r1/index.html#question-2-what-does-the-deepseek-r1-zero-training-process-look-like",
+    "href": "posts/deepseek-r1/index.html#question-2-what-does-the-deepseek-r1-zero-training-process-look-like",
+    "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
+    "section": "Question 2: What does the DeepSeek-R1-Zero training process look like?",
+    "text": "Question 2: What does the DeepSeek-R1-Zero training process look like?\nThe goal of training is to “steer” the base LLM (like GPT-4o or DeepSeek V3) towards generating correct and well-formatted answers more consistently. Think of it like upgrading the model – from GPT-4o to a hypothetical “o3-mini-high,” or from DeepSeek V3 to DeepSeek-R1-Zero.\nThe left side of the below figure is the base model while the right side is the prompted version with GRPO based RL training. As you can see the left one fails at the question while the right one succeeds also with the reasoning process. The figure comes from reference 4.\n\n\n\n\nWith VS Without Reasoning\n\n\n\nHere’s how it works:\nPrompting the Model: We feed a practice problem (like the math problem about Natalia’s clips in the below table) to the current version of the LLM, which we’ll call the “old LLM.”\nGenerating Responses: run the old LLM with the practice problem as prompt several times to get answers (technically called “completions”). Some of these might be correct, some incorrect, and some might have formatting issues.\nScoring the Responses: A “reward function” evaluates each response, assigning scores based on: Correctness: How accurate the answer is. Format: Whether the response follows a desired structure (e.g., showing its steps).\nUpdating the Model: The crucial step! Using a specialized algorithm called GRPO (Generalized Relative Policy Optimization), the LLM’s internal parameters (the “weights” that control its behavior) are adjusted. These adjustments are guided by the reward scores: responses with higher scores “pull” the model’s parameters in their direction, making it more likely to generate similar responses in the future. This updated model is now the “new LLM.”\nIteration: We set the “old LLM” to be the “new LLM” (the updated version) and repeat steps 1-4 many, many times. With each iteration, the model gets progressively better at generating correct and well-formatted answers. This iterative process continues until we have a version of the LLM with significantly improved reasoning abilities – in this case, DeepSeek-R1-Zero.\nIt’s like teaching through trial and error - the model keeps attempting problems, learns from its successes and failures, and gradually becomes better at solving them. The final result is a more capable model like DeepSeek-R1-Zero.\nLet’s dive deep into reward functions a bit. The DeepSeek paper mentioned two types of rewards: accuracy and format. An implementation could be but not limited to as below."
+  },
+  {
+    "objectID": "posts/deepseek-r1/index.html#question-3-understand-the-group-relative-policy-optimization-grpo-algorithm-in-detail",
+    "href": "posts/deepseek-r1/index.html#question-3-understand-the-group-relative-policy-optimization-grpo-algorithm-in-detail",
+    "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
+    "section": "Question 3: understand the Group Relative Policy Optimization (GRPO) algorithm in detail",
+    "text": "Question 3: understand the Group Relative Policy Optimization (GRPO) algorithm in detail\n\n \n\nThe GRPO algorithm, as described in the paper, begins by sampling a group of outputs {o_1, o_2, …, o_G} from the old LLM (denoted as π_θold). This is done by feeding the same training example (the prompt, q) to the old LLM multiple times and collecting the different responses it generates.\nThe training then focuses on maximizing the objective function (equation (1)). This objective function is, at its core, a complex function of the new LLM’s parameters (θ). Standard gradient descent algorithms can be used to efficiently update these parameters and maximize the function’s value.\nThe key to understanding how GRPO improves the LLM lies in maximizing the objective function (equation (1)). And the heart of that process is within the part highlighted by the “red rectangle.”\nLet’s zoom into the red rectangle, which contains two parts: (1) probability ratio (2) Advantage function Ai. Advantage function Ai is defined in the equation (3) and pretty straightforward. A_i tells us whether a particular output (o_i) is better or worse than the average output for a given prompt. If the reward (R_i) for o_i is higher than the average reward, A_i is positive (good). If the reward for o_i is lower than the average reward, A_i is negative (bad).\nProbability ratio: measures how much the probability of generating the completion o_i for prompt q has changed between the new policy π_and the old policy π_{_{old}}. - Ratio &gt; 1: The new LLM is more likely to generate o_i than the old LLM. - Ratio &lt; 1: The new LLM is less likely to generate o_i than the old LLM.\nThe Magic: Multiplying Ratio and Advantage - If A_i &gt; 0 (good completion) and Ratio &gt; 1 (new policy makes it more likely), we want to encourage this change. We want to increase the probability of generating this good completion even more. - If A_i &gt; 0 and Ratio &lt; 1 (new policy makes it less likely), we want to discourage this change. We want to increase the probability of generating this good completion. - If A_i &lt; 0 (bad completion) and Ratio &gt; 1 (new policy makes it more likely), we want to discourage this change. We want to decrease the probability of generating this bad completion. - If A_i &lt; 0 and Ratio &lt; 1 (new policy makes it less likely), we want to encourage this change. We want to decrease the probability of generating this bad completion even further.\nBeyond the Red Rectangle: Stability and Generalization\nThe “clip” and “KL” terms in the full objective function play important roles in ensuring the training process remains stable and the model generalizes well:\n\nClipping (clip): The clip function acts like a “brake,” preventing the probability ratio from changing too drastically in a single update. This avoids large, potentially destabilizing parameter adjustments.\nKL Divergence (KL): The KL divergence term measures how much the new LLM’s behavior differs from a “reference” policy (often the old LLM). By penalizing large deviations, we encourage the model to improve incrementally and retain some of its desirable characteristics. This helps the model perform well on new, unseen problems and encourages exploration of different solutions."
+  },
+  {
+    "objectID": "posts/deepseek-r1/index.html#question-4-what-makes-r1-zero-work-is-it-grpo-or-something-else",
+    "href": "posts/deepseek-r1/index.html#question-4-what-makes-r1-zero-work-is-it-grpo-or-something-else",
+    "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
+    "section": "Question 4: What makes R1-zero work, is it GRPO or something else?",
+    "text": "Question 4: What makes R1-zero work, is it GRPO or something else?\nAs an engineer with no prior LLM/RL experience, I found the GRPO algorithm surprisingly understandable after just a weekend of study. It’s essentially a refined version of the established PPO algorithm, so for experts in the field, it’s likely not a revolutionary leap. The real challenge, and where DeepSeek-R1-Zero truly shines, is in the engineering implementation, for example how to define the reward functions. This highlights the critical importance of exceptionally talented engineers, perhaps even more so than simply acquiring more computing power.\nThe idea of using pure RL to improve a base model isn’t new, but previous attempts haven’t matched DeepSeek’s results. I suspect two key factors are at play: first, a very strong foundation in the base model itself; and second, the quality of the training data (the practice problems). DeepSeek hasn’t open-sourced their training data, which is a strong indication of its crucial and proprietary nature.\nIn essence, DeepSeek-R1-Zero’s success likely boils down to a potent combination of: brilliant engineering, carefully curated training examples, and a robust base model.\nThis article is a collaboration with DeepSeek-R1, Gemini 2.0 Flash Thinking Experimental 01-21 (Google really needs to work hard on the naming), ChatGPT o3-mini-high, Claude. Gemini is slightly better than R1, but both of them are better than o3-mini-high in terms of reasoning. Claude is still really good at polishing writing but Gemini 2.0 Pro Experimental 02-05 is at least comparable. The conclusion is there is no need to be a member of Claude anymore. :-)."
+  },
+  {
+    "objectID": "posts/deepseek-r1/index.html#reference",
+    "href": "posts/deepseek-r1/index.html#reference",
+    "title": "Explain DeepSeek-R1-Zero to My Little Aurora",
+    "section": "Reference",
+    "text": "Reference\n\n深度强化学习(1/5)：基本概念 Deep Reinforcement Learning (1/5)\nhttps://x.com/karpathy/status/1885026028428681698\nDeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning, link\nTrain your own R1 reasoning model with Unsloth (GRPO) link\nhttps://gist.github.com/willccbb/4676755236bb08cab5f4e54a0475d6fb"
+  }
+]
