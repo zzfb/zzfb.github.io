@@ -6,15 +6,15 @@
       version="2.0">
 <channel>
 <title>Zhong&#39;s ML Notes</title>
-<link>https://your-website-url.example.com/</link>
-<atom:link href="https://your-website-url.example.com/index.xml" rel="self" type="application/rss+xml"/>
+<link>https://zzfb.github.io/</link>
+<atom:link href="https://zzfb.github.io/index.xml" rel="self" type="application/rss+xml"/>
 <description>Machine learning articles, notebooks, and papers</description>
 <generator>quarto-1.8.24</generator>
 <lastBuildDate>Sun, 14 Sep 2025 04:00:00 GMT</lastBuildDate>
 <item>
   <title>Explain DeepSeek-R1-Zero to My Little Aurora</title>
   <dc:creator>Zhong Zhang</dc:creator>
-  <link>https://your-website-url.example.com/posts/deepseek-r1/</link>
+  <link>https://zzfb.github.io/posts/deepseek-r1/</link>
   <description><![CDATA[ 
 
 
@@ -61,7 +61,7 @@
 <div style="text-align: center;">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="https://your-website-url.example.com/posts/deepseek-r1/pretraining_sft_rl.jpeg" class="img-fluid figure-img"></p>
+<p><img src="https://zzfb.github.io/posts/deepseek-r1/pretraining_sft_rl.jpeg" class="img-fluid figure-img"></p>
 <figcaption>pretraining, SFT, RL</figcaption>
 </figure>
 </div>
@@ -70,7 +70,7 @@
 <div style="text-align: center;">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="https://your-website-url.example.com/posts/deepseek-r1/RL_vs_SFT.jpg" class="img-fluid figure-img"></p>
+<p><img src="https://zzfb.github.io/posts/deepseek-r1/RL_vs_SFT.jpg" class="img-fluid figure-img"></p>
 <figcaption>Pure RL VS SFT</figcaption>
 </figure>
 </div>
@@ -84,7 +84,7 @@
 <div style="text-align: center;">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="https://your-website-url.example.com/posts/deepseek-r1/with_vs_without_reasoning.jpg" class="img-fluid figure-img"></p>
+<p><img src="https://zzfb.github.io/posts/deepseek-r1/with_vs_without_reasoning.jpg" class="img-fluid figure-img"></p>
 <figcaption>With VS Without Reasoning</figcaption>
 </figure>
 </div>
@@ -342,7 +342,7 @@ font-style: inherit;">in</span> matches]</span></code></pre></div></div>
 <section id="question-3-understand-the-group-relative-policy-optimization-grpo-algorithm-in-detail" class="level2">
 <h2 class="anchored" data-anchor-id="question-3-understand-the-group-relative-policy-optimization-grpo-algorithm-in-detail">Question 3: understand the Group Relative Policy Optimization (GRPO) algorithm in detail</h2>
 <div style="text-align: center;">
-<p><img src="https://your-website-url.example.com/posts/deepseek-r1/grpo1.jpg" class="img-fluid"> <img src="https://your-website-url.example.com/posts/deepseek-r1/grpo2.jpg" class="img-fluid"></p>
+<p><img src="https://zzfb.github.io/posts/deepseek-r1/grpo1.jpg" class="img-fluid"> <img src="https://zzfb.github.io/posts/deepseek-r1/grpo2.jpg" class="img-fluid"></p>
 </div>
 <p>The GRPO algorithm, as described in the paper, begins by sampling a group of outputs {o_1, o_2, …, o_G} from the old LLM (denoted as π_θold). This is done by feeding the same training example (the prompt, q) to the old LLM multiple times and collecting the different responses it generates.</p>
 <p>The training then focuses on maximizing the objective function (equation (1)). This objective function is, at its core, a complex function of the new LLM’s parameters (θ). Standard gradient descent algorithms can be used to efficiently update these parameters and maximize the function’s value.</p>
@@ -382,7 +382,7 @@ font-style: inherit;">in</span> matches]</span></code></pre></div></div>
   <category>AI</category>
   <category>LLM</category>
   <category>RL</category>
-  <guid>https://your-website-url.example.com/posts/deepseek-r1/</guid>
+  <guid>https://zzfb.github.io/posts/deepseek-r1/</guid>
   <pubDate>Sun, 14 Sep 2025 04:00:00 GMT</pubDate>
 </item>
 </channel>
