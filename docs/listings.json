@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/user-seq-foundation-model/index.html",
       "/posts/deepseek-r1/index.html"
     ]
   }

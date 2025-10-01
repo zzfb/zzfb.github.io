@@ -1,0 +1,375 @@
+% Options for packages loaded elsewhere
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  letterpaper,
+  DIV=11,
+  numbers=noendperiod]{scrartcl}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+% Make \paragraph and \subparagraph free-standing
+\makeatletter
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}{
+    \@ifstar
+      \xxxParagraphStar
+      \xxxParagraphNoStar
+  }
+  \newcommand{\xxxParagraphStar}[1]{\oldparagraph*{#1}\mbox{}}
+  \newcommand{\xxxParagraphNoStar}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}{
+    \@ifstar
+      \xxxSubParagraphStar
+      \xxxSubParagraphNoStar
+  }
+  \newcommand{\xxxSubParagraphStar}[1]{\oldsubparagraph*{#1}\mbox{}}
+  \newcommand{\xxxSubParagraphNoStar}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+\makeatother
+
+
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+
+
+
+
+
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+
+
+ 
+
+
+\KOMAoption{captions}{tableheading}
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={PinFM \& Approaches to User-Sequence Modeling},
+  pdfauthor={Zhong Zhang},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+
+\title{PinFM \& Approaches to User-Sequence Modeling}
+\author{Zhong Zhang}
+\date{2025-10-01}
+\begin{document}
+\maketitle
+
+
+\section{Overview}\label{overview}
+
+There are three main approaches to user-sequence modeling:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Pure sequential models} that treat the clickstream as a
+  standalone sequence and learn end-to-end (e.g., Meta's HSTU).
+\item
+  \textbf{Sequence encoders inside existing recommender architectures},
+  where a transformer encodes the user's activity sequence and its
+  representation is fed to the ranker (e.g., TransAct, TWIN).
+\item
+  \textbf{Pretrain-then-fine-tune foundation models}, where a
+  sequence-only model is pretrained across applications on large-scale
+  user activity and then fine-tuned alongside task-specific features in
+  downstream models.
+\end{enumerate}
+
+This note focuses on \textbf{PinFM}, a representative of approach (3).
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{PinFM: A Foundation Model for User Activity
+Sequences}\label{pinfm-a-foundation-model-for-user-activity-sequences}
+
+\textbf{Setting.} A billion-scale visual discovery platform trains a
+large transformer (\textbf{20B+ parameters}) on two years of user
+actions, then plugs it into multiple downstream ranking stacks (e.g.,
+Home Feed, Item-to-Item). The aim is to \textbf{reuse one strong
+sequence encoder across apps} under \textbf{hard latency/cost
+constraints}.
+
+\subsection{Pretraining
+(sequence-only)}\label{pretraining-sequence-only}
+
+\textbf{Inputs.} ID-based tokens:
+
+\begin{itemize}
+\tightlist
+\item
+  Item IDs, surface types, and action types are embedded.
+\item
+  Tokens pass through a small input MLP with L2-norm (
+  \phi\_\{\text{in}\} ).
+\item
+  A transformer backbone produces hidden states.
+\item
+  An output MLP with L2-norm ( \phi\_\{\text{out}\} ) yields a sequence
+  of user states ( H = (H\_1,\dots,H\_L) ).
+\end{itemize}
+
+\begin{quote}
+Observation: Unlike many ID-based ranking models, \textbf{pretraining
+does not suffer from one-epoch overfitting}.
+\end{quote}
+
+\subsubsection{Contrastive objective
+(InfoNCE)}\label{contrastive-objective-infonce}
+
+For state ( H\_i ), the positive is the next positively engaged item
+embedding ( z\_\{i+1\} = \mathrm{emb}(\mathrm{id}\_\{i+1\}) ). Negatives
+are in-batch item embeddings excluding items positively engaged by the
+same user. The temperature ( \tau ) is learned.
+
+We minimize \[
+\mathcal{L}_{\text{InfoNCE}}(i)
+= - \log
+\frac{\exp\!\big(\mathrm{sim}(H_i, z_{i+1})/\tau\big)}
+{\sum\limits_{j \in \mathcal{N}_i}\exp\!\big(\mathrm{sim}(H_i, z_j)/\tau\big)} \, ,
+\] which scales to large vocabularies without a full softmax.
+
+\subsubsection{Three stacked losses (serve-time
+aligned)}\label{three-stacked-losses-serve-time-aligned}
+
+To better match user behavior and serving constraints, pretraining
+stacks three InfoNCE-style losses:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{NTL (Next-Token Loss):} apply only when the next token is a
+  \textbf{positive}.
+\item
+  \textbf{MTL (Multi-Token Loss):} predict \textbf{all positives in a
+  short future window} to capture short-term (``sticky'') interests.
+\item
+  \textbf{FTL (Future-Token Loss):} emphasize the state near serve-time
+  length ( L\_d ) by predicting a \textbf{future window from (
+  H\_\{L\_d\} )} (instruction-tuning-style alignment).
+\end{itemize}
+
+\textbf{Serve-time alignment example.} Pretraining segments use ( L =
+100 ), but serving can afford only ( L\_d = 20 ). Compute (
+(H\_1,\dots,H\_\{100\}) ), take ( H\_\{20\} ), and apply InfoNCE to
+predict positives in a short window (e.g., steps (21!\dots!25)).
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Fine-tuning (plugging into
+rankers)}\label{fine-tuning-plugging-into-rankers}
+
+PinFM is added as a \textbf{user-sequence module} inside DLRM/DCN-style
+stacks. Two fusions:
+
+\subsubsection{Late Fusion}\label{late-fusion}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Input to PinFM:} user sequence only.\\
+\item
+  \textbf{Output:} a \textbf{user embedding}.
+\item
+  \textbf{Crossing:} the downstream ranker crosses this user embedding
+  with candidate features.
+\item
+  \textbf{Pros:} easy to cache per request (identical for all
+  candidates).
+\item
+  \textbf{Cons:} cannot contextualize the user history \textbf{to each
+  candidate}.
+\end{itemize}
+
+\subsubsection{Early Fusion (default)}\label{early-fusion-default}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Input to PinFM:} user sequence \textbf{plus the candidate
+  token appended}.
+\item
+  \textbf{Outputs:} (i) a \textbf{user embedding}, and (ii) a
+  \textbf{crossed user×candidate embedding} learned inside the
+  transformer.
+\item
+  \textbf{Pros:} stronger prediction due to candidate-conditioned
+  encoding.
+\item
+  \textbf{Caching:} still efficient via \textbf{DCAT} (see below).
+\item
+  \textbf{Extras:} inject candidate features (e.g., GraphSAGE) by
+  \textbf{summing} them with the candidate-ID embedding and adding a
+  \textbf{small alignment loss}.
+\end{itemize}
+
+\textbf{Terminology.} - \textbf{Contextual (candidate-token output):}
+``how this candidate fits this user at this moment.'' -
+\textbf{Intrinsic (pretrained ID embedding):} ``what the candidate is,
+regardless of user.''
+
+\textbf{Training notes.} Early fusion is default; optionally
+\textbf{keep NTL/MTL during fine-tune}, set the PinFM learning rate (
+\approx \tfrac{1}{10} ) of the ranker's, add \textbf{ranking loss on
+PinFM outputs}, and use an \textbf{MSE alignment} to the final
+prediction.
+
+\subsubsection{Input-sequence construction (during
+fine-tuning)}\label{input-sequence-construction-during-fine-tuning}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{User context tokens:} the most recent ( L\_d ) actions (e.g.,
+  ( L\_d=20 )).
+\item
+  \textbf{Candidate token:} appended for early fusion.
+\item
+  \textbf{Optional features:} sum content/graph embeddings into the
+  candidate token; optionally add a small \textbf{Learnable Token (LT)}
+  before the candidate to capture extra user×candidate interactions.
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Cold-start robustness}\label{cold-start-robustness}
+
+\textbf{Problem.} ID-heavy models underperform on fresh items with
+little ID history.
+
+\textbf{Mitigations.}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Candidate-ID Randomization (\textasciitilde10\%)}\\
+  Randomize the candidate ID about 10\% of the time during fine-tune to
+  simulate unseen IDs and force reliance on \textbf{sequence context}
+  and \textbf{non-ID features}.
+\item
+  \textbf{Item-Age-Dependent Dropout}\\
+  Apply stronger dropout on PinFM outputs for fresh items, right before
+  feature crossing:
+
+  ```python if age\_days \textless{} 7: out = Dropout(p=0.7)(out) elif
+  age\_days \textless{} 28: out = Dropout(p=0.5)(out)
+\end{enumerate}
+
+
+
+
+\end{document}

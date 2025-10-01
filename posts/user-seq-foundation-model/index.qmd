@@ -1,0 +1,184 @@
+---
+title: "User Sequence Foundation Model"
+author: "Zhong Zhang"
+date: "2025-10-01"
+categories: [Recsys, GenAI]
+description: "A concise overview of three modeling approaches for user sequences"
+---
+
+---
+title: "PinFM & Approaches to User-Sequence Modeling"
+description: "Overview of three sequence-modeling approaches and a deep dive on PinFM (a pretrain-then-fine-tune foundation model)."
+format:
+  html:
+    toc: true
+    toc-location: left
+    number-sections: false
+    code-fold: false
+    html-math-method: katex
+  pdf: default
+execute: false
+---
+
+# Overview
+
+There are three main approaches to user-sequence modeling:
+
+1. **Pure sequential models** that treat the clickstream as a standalone sequence and learn end-to-end (e.g., Meta’s HSTU).
+2. **Sequence encoders inside existing recommender architectures**, where a transformer encodes the user’s activity sequence and its representation is fed to the ranker (e.g., TransAct, TWIN).
+3. **Pretrain-then-fine-tune foundation models**, where a sequence-only model is pretrained across applications on large-scale user activity and then fine-tuned alongside task-specific features in downstream models.
+
+This note focuses on **PinFM**, a representative of approach (3).
+
+---
+
+# PinFM: A Foundation Model for User Activity Sequences
+
+**Setting.** A billion-scale visual discovery platform trains a large transformer (**20B+ parameters**) on two years of user actions, then plugs it into multiple downstream ranking stacks (e.g., Home Feed, Item-to-Item). The aim is to **reuse one strong sequence encoder across apps** under **hard latency/cost constraints**.
+
+## Pretraining (sequence-only)
+
+**Inputs.** ID-based tokens:
+
+- Item IDs, surface types, and action types are embedded.
+- Tokens pass through a small input MLP with L2-norm \( \phi_{\text{in}} \).
+- A transformer backbone produces hidden states.
+- An output MLP with L2-norm \( \phi_{\text{out}} \) yields a sequence of user states \( H = (H_1,\dots,H_L) \).
+
+> Observation: Unlike many ID-based ranking models, **pretraining does not suffer from one-epoch overfitting**.
+
+### Contrastive objective (InfoNCE)
+
+For state \( H_i \), the positive is the next positively engaged item embedding
+\( z_{i+1} = \mathrm{emb}(\mathrm{id}_{i+1}) \).
+Negatives are in-batch item embeddings excluding items positively engaged by the same user. The temperature \( \tau \) is learned.
+
+We minimize
+$$
+\mathcal{L}_{\text{InfoNCE}}(i)
+= - \log
+\frac{\exp\!\big(\mathrm{sim}(H_i, z_{i+1})/\tau\big)}
+{\sum\limits_{j \in \mathcal{N}_i}\exp\!\big(\mathrm{sim}(H_i, z_j)/\tau\big)} \, ,
+$$
+which scales to large vocabularies without a full softmax.
+
+### Three stacked losses (serve-time aligned)
+
+To better match user behavior and serving constraints, pretraining stacks three InfoNCE-style losses:
+
+- **NTL (Next-Token Loss):** apply only when the next token is a **positive**.
+- **MTL (Multi-Token Loss):** predict **all positives in a short future window** to capture short-term (“sticky”) interests.
+- **FTL (Future-Token Loss):** emphasize the state near serve-time length \( L_d \) by predicting a **future window from \( H_{L_d} \)** (instruction-tuning-style alignment).
+
+**Serve-time alignment example.** Pretraining segments use \( L = 100 \), but serving can afford only \( L_d = 20 \).
+Compute \( (H_1,\dots,H_{100}) \), take \( H_{20} \), and apply InfoNCE to predict positives in a short window (e.g., steps \(21\!\dots\!25\)).
+
+---
+
+## Fine-tuning (plugging into rankers)
+
+PinFM is added as a **user-sequence module** inside DLRM/DCN-style stacks. Two fusions:
+
+### Late Fusion
+
+- **Input to PinFM:** user sequence only.  
+- **Output:** a **user embedding**.
+- **Crossing:** the downstream ranker crosses this user embedding with candidate features.
+- **Pros:** easy to cache per request (identical for all candidates).
+- **Cons:** cannot contextualize the user history **to each candidate**.
+
+### Early Fusion (default)
+
+- **Input to PinFM:** user sequence **plus the candidate token appended**.
+- **Outputs:** (i) a **user embedding**, and (ii) a **crossed user×candidate embedding** learned inside the transformer.
+- **Pros:** stronger prediction due to candidate-conditioned encoding.
+- **Caching:** still efficient via **DCAT** (see below).
+- **Extras:** inject candidate features (e.g., GraphSAGE) by **summing** them with the candidate-ID embedding and adding a **small alignment loss**.
+
+**Terminology.**
+- **Contextual (candidate-token output):** “how this candidate fits this user at this moment.”
+- **Intrinsic (pretrained ID embedding):** “what the candidate is, regardless of user.”
+
+**Training notes.** Early fusion is default; optionally **keep NTL/MTL during fine-tune**, set the PinFM learning rate \( \approx \tfrac{1}{10} \) of the ranker’s, add **ranking loss on PinFM outputs**, and use an **MSE alignment** to the final prediction.
+
+### Input-sequence construction (during fine-tuning)
+
+- **User context tokens:** the most recent \( L_d \) actions (e.g., \( L_d=20 \)).
+- **Candidate token:** appended for early fusion.
+- **Optional features:** sum content/graph embeddings into the candidate token; optionally add a small **Learnable Token (LT)** before the candidate to capture extra user×candidate interactions.
+
+---
+
+## Cold-start robustness
+
+**Problem.** ID-heavy models underperform on fresh items with little ID history.
+
+**Mitigations.**
+
+1. **Candidate-ID Randomization (~10%)**  
+   Randomize the candidate ID about 10% of the time during fine-tune to simulate unseen IDs and force reliance on **sequence context** and **non-ID features**.
+
+2. **Item-Age-Dependent Dropout**  
+   Apply stronger dropout on PinFM outputs for fresh items, right before feature crossing:
+
+   ```python
+   if age_days < 7:
+       out = Dropout(p=0.7)(out)
+   elif age_days < 28:
+       out = Dropout(p=0.5)(out)
+
+3. **Feed non-ID signals into the candidate token**
+Sum content/graph embeddings (e.g., GraphSAGE) with the candidate-ID embedding at the candidate position; consider adding a Learnable Token (LT) and exporting both the candidate-conditioned output and the intrinsic pretrained candidate-ID embedding.
+
+Making it fast enough (DCAT + quantization)
+
+DCAT: Deduplicated Cross-Attention Transformer.
+At serving, there are far fewer unique user sequences than items scored per request (≈ 
+1
+:
+1000
+1:1000). DCAT splits compute into:
+
+Context pass: user-only; KV cached.
+
+Crossing pass: candidate-conditioned cross-attention using the cached KV.
+
+Throughput gains: ~600% at serving and ~200% in training vs. strong baselines (same hardware class).
+
+Embedding/table optimizations.
+
+Quantize large ID tables (e.g., int4), serve them on CPU, and ship only needed rows to GPU, reducing I/O and end-to-end latency with negligible quality loss.
+
+Scaling PinFM
+
+Vocabulary size 
+→
+→ quality.
+Quality improves as the item vocabulary grows. Scaling item-ID rows from 20M 
+→
+→ 160M steadily boosts Home Feed Save HIT@3 (e.g., +1.98% at 160M vs. 20M).
+
+Embedding capacity.
+Capacity is dominated by ID embeddings. Each item’s 256-d vector is formed by concatenating 8 sub-embeddings (32-d each), each indexed via independent hashes to reduce collisions and spread shards.
+
+Transformer depth/width.
+Details beyond the 20B+ regime are not specified.
+
+TL;DR
+
+Pretrain a large sequence-only transformer with InfoNCE (NTL/MTL/FTL) on long segments; align to serve-time length 
+𝐿
+𝑑
+L
+d
+	​
+
+.
+
+Fine-tune with early fusion so the encoder conditions on the candidate; keep auxiliary sequence losses and align to the final ranker.
+
+Harden cold-start with ID randomization, age-dependent dropout, and content/graph features at the candidate token.
+
+Ship at scale with DCAT caching, quantized ID tables, and selective row transfer to GPU.
+
+Bigger vocabularies help; embedding tables dominate capacity and benefit from multi-hash partitioning.
