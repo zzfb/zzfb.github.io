@@ -13,7 +13,6 @@ format:
     number-sections: false
     code-fold: false
     html-math-method: mathjax
-  pdf: default
 ---
 
 # Overview
