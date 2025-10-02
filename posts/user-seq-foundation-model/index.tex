@@ -65,6 +65,46 @@
 \fi
 \makeatother
 
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{241,243,245}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.40,0.45,0.13}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\ExtensionTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.28,0.35,0.67}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.46,0.62}{#1}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.07,0.07,0.07}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
 
 \usepackage{longtable,booktabs,array}
 \usepackage{calc} % for calculating minipage widths
@@ -152,7 +192,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same}
 \hypersetup{
-  pdftitle={PinFM \& Approaches to User-Sequence Modeling},
+  pdftitle={User Sequence Foundation Model},
   pdfauthor={Zhong Zhang},
   colorlinks=true,
   linkcolor={blue},
@@ -162,7 +202,7 @@
   pdfcreator={LaTeX via pandoc}}
 
 
-\title{PinFM \& Approaches to User-Sequence Modeling}
+\title{User Sequence Foundation Model}
 \author{Zhong Zhang}
 \date{2025-10-01}
 \begin{document}
@@ -214,13 +254,13 @@ constraints}.
 \item
   Item IDs, surface types, and action types are embedded.
 \item
-  Tokens pass through a small input MLP with L2-norm (
-  \phi\_\{\text{in}\} ).
+  Tokens pass through a small input MLP with L2-norm
+  \(\phi_{\text{in}}\).
 \item
   A transformer backbone produces hidden states.
 \item
-  An output MLP with L2-norm ( \phi\_\{\text{out}\} ) yields a sequence
-  of user states ( H = (H\_1,\dots,H\_L) ).
+  An output MLP with L2-norm \(\phi_{\text{out}}\) yields a sequence of
+  user states \(H = (H_1,\dots,H_L)\).
 \end{itemize}
 
 \begin{quote}
@@ -231,10 +271,10 @@ does not suffer from one-epoch overfitting}.
 \subsubsection{Contrastive objective
 (InfoNCE)}\label{contrastive-objective-infonce}
 
-For state ( H\_i ), the positive is the next positively engaged item
-embedding ( z\_\{i+1\} = \mathrm{emb}(\mathrm{id}\_\{i+1\}) ). Negatives
-are in-batch item embeddings excluding items positively engaged by the
-same user. The temperature ( \tau ) is learned.
+For state \(H_i\), the positive is the next positively engaged item
+embedding \(z_{i+1} = \mathrm{emb}(\mathrm{id}_{i+1})\). Negatives are
+in-batch item embeddings excluding items positively engaged by the same
+user. The temperature \(\tau\) is learned.
 
 We minimize \[
 \mathcal{L}_{\text{InfoNCE}}(i)
@@ -259,14 +299,14 @@ stacks three InfoNCE-style losses:
   short future window} to capture short-term (``sticky'') interests.
 \item
   \textbf{FTL (Future-Token Loss):} emphasize the state near serve-time
-  length ( L\_d ) by predicting a \textbf{future window from (
-  H\_\{L\_d\} )} (instruction-tuning-style alignment).
+  length \(L_d\) by predicting a \textbf{future window from \(H_{L_d}\)}
+  (instruction-tuning-style alignment).
 \end{itemize}
 
-\textbf{Serve-time alignment example.} Pretraining segments use ( L =
-100 ), but serving can afford only ( L\_d = 20 ). Compute (
-(H\_1,\dots,H\_\{100\}) ), take ( H\_\{20\} ), and apply InfoNCE to
-predict positives in a short window (e.g., steps (21!\dots!25)).
+\textbf{Serve-time alignment example.} Pretraining segments use
+\(L = 100\), but serving can afford only \(L_d = 20\). Compute
+\((H_1,\dots,H_{100})\), take \(H_{20}\), and apply InfoNCE to predict
+positives in a short window (e.g., steps \(21\!\dots\!25\)).
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
@@ -323,8 +363,8 @@ stacks. Two fusions:
 regardless of user.''
 
 \textbf{Training notes.} Early fusion is default; optionally
-\textbf{keep NTL/MTL during fine-tune}, set the PinFM learning rate (
-\approx \tfrac{1}{10} ) of the ranker's, add \textbf{ranking loss on
+\textbf{keep NTL/MTL during fine-tune}, set the PinFM learning rate
+\(\approx \tfrac{1}{10}\) of the ranker's, add \textbf{ranking loss on
 PinFM outputs}, and use an \textbf{MSE alignment} to the final
 prediction.
 
@@ -334,8 +374,8 @@ fine-tuning)}\label{input-sequence-construction-during-fine-tuning}
 \begin{itemize}
 \tightlist
 \item
-  \textbf{User context tokens:} the most recent ( L\_d ) actions (e.g.,
-  ( L\_d=20 )).
+  \textbf{User context tokens:} the most recent \(L_d\) actions (e.g.,
+  \(L_d=20\)).
 \item
   \textbf{Candidate token:} appended for early fusion.
 \item
@@ -365,9 +405,86 @@ little ID history.
   Apply stronger dropout on PinFM outputs for fresh items, right before
   feature crossing:
 
-  ```python if age\_days \textless{} 7: out = Dropout(p=0.7)(out) elif
-  age\_days \textless{} 28: out = Dropout(p=0.5)(out)
+\begin{Shaded}
+\begin{Highlighting}[]
+\ControlFlowTok{if}\NormalTok{ age\_days }\OperatorTok{\textless{}} \DecValTok{7}\NormalTok{:}
+\NormalTok{    out }\OperatorTok{=}\NormalTok{ Dropout(p}\OperatorTok{=}\FloatTok{0.7}\NormalTok{)(out)}
+\ControlFlowTok{elif}\NormalTok{ age\_days }\OperatorTok{\textless{}} \DecValTok{28}\NormalTok{:}
+\NormalTok{    out }\OperatorTok{=}\NormalTok{ Dropout(p}\OperatorTok{=}\FloatTok{0.5}\NormalTok{)(out)}
+\end{Highlighting}
+\end{Shaded}
+\item
+  \textbf{Feed non-ID signals into the candidate token} Sum
+  content/graph embeddings (e.g., GraphSAGE) with the candidate-ID
+  embedding at the candidate position; consider adding a Learnable Token
+  (LT) and exporting both the candidate-conditioned output and the
+  intrinsic pretrained candidate-ID embedding.
 \end{enumerate}
+
+\subsection{Making it fast enough (DCAT +
+quantization)}\label{making-it-fast-enough-dcat-quantization}
+
+\subsubsection{DCAT: Deduplicated Cross-Attention
+Transformer.}\label{dcat-deduplicated-cross-attention-transformer.}
+
+At serving, there are far fewer unique user sequences than items scored
+per request (≈1:1000) DCAT splits compute into:
+
+\begin{itemize}
+\item
+  Context pass: user-only; KV cached.
+\item
+  Crossing pass: candidate-conditioned cross-attention using the cached
+  KV.
+\end{itemize}
+
+Throughput gains: \textasciitilde600\% at serving and
+\textasciitilde200\% in training vs.~strong baselines (same hardware
+class).
+
+\subsubsection{Embedding/table
+optimizations.}\label{embeddingtable-optimizations.}
+
+Quantize large ID tables (e.g., int4), serve them on CPU, and ship only
+needed rows to GPU, reducing I/O and end-to-end latency with negligible
+quality loss.
+
+\subsection{Scaling PinFM}\label{scaling-pinfm}
+
+\subsubsection{Vocabulary size}\label{vocabulary-size}
+
+Quality improves as the item vocabulary grows. Scaling item-ID rows from
+20M→160M steadily boosts Home Feed Save HIT@3 (e.g., +1.98\% at 160M
+vs.~20M).
+
+Capacity is dominated by ID embeddings. Each item's 256-d vector is
+formed by concatenating 8 sub-embeddings (32-d each), each indexed via
+independent hashes to reduce collisions and spread shards.
+
+\subsubsection{Transformer depth/width.}\label{transformer-depthwidth.}
+
+Details beyond the 20B+ regime are not specified.
+
+\subsection{TL;DR}\label{tldr}
+
+\begin{itemize}
+\item
+  Pretrain a large sequence-only transformer with InfoNCE (NTL/MTL/FTL)
+  on long segments; align to serve-time length
+\item
+  Fine-tune with early fusion so the encoder conditions on the
+  candidate; keep auxiliary sequence losses and align to the final
+  ranker.
+\item
+  Harden cold-start with ID randomization, age-dependent dropout, and
+  content/graph features at the candidate token.
+\item
+  Ship at scale with DCAT caching, quantized ID tables, and selective
+  row transfer to GPU.
+\item
+  Bigger vocabularies help; embedding tables dominate capacity and
+  benefit from multi-hash partitioning.
+\end{itemize}
 
 
 

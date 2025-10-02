@@ -13,5 +13,9 @@
   },
   "posts/deepseek-r1/index.qmd": {
     "index.html": "440c082e"
+  },
+  "posts/user-seq-foundation-model/index.qmd": {
+    "index.html": "104c38e0",
+    "index.tex": "4af9a6b6"
   }
 }
