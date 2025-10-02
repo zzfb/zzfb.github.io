@@ -10,7 +10,190 @@
 <atom:link href="https://zzfb.github.io/index.xml" rel="self" type="application/rss+xml"/>
 <description>Machine learning articles, notebooks, and papers</description>
 <generator>quarto-1.8.24</generator>
-<lastBuildDate>Sun, 14 Sep 2025 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Wed, 01 Oct 2025 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>User Sequence Foundation Model</title>
+  <dc:creator>Zhong Zhang</dc:creator>
+  <link>https://zzfb.github.io/posts/user-seq-foundation-model/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="overview" class="level1">
+<h1>Overview</h1>
+<p>There are three main approaches to user-sequence modeling:</p>
+<ol type="1">
+<li><strong>Pure sequential models</strong> that treat the clickstream as a standalone sequence and learn end-to-end (e.g., Meta’s HSTU).</li>
+<li><strong>Sequence encoders inside existing recommender architectures</strong>, where a transformer encodes the user’s activity sequence and its representation is fed to the ranker (e.g., TransAct1&amp;2, TWIN1&amp;2).</li>
+<li><strong>Pretrain-then-fine-tune foundation models</strong>, where a sequence-only model is pretrained across applications on large-scale user activity and then fine-tuned alongside task-specific features in downstream models.</li>
+</ol>
+<p>This note focuses on <strong>PinFM</strong>, a representative of approach (3).</p>
+<hr>
+</section>
+<section id="pinfm-a-foundation-model-for-user-activity-sequences" class="level1">
+<h1>PinFM: A Foundation Model for User Activity Sequences</h1>
+<p>A billion-scale visual discovery platform trains a large transformer (<strong>20B+ parameters</strong>) on two years of user activity sequences, then plugs it into multiple downstream ranking stacks (e.g., Home Feed, Item-to-Item). The aim is to <strong>reuse one strong sequence encoder across apps</strong> under <strong>hard latency/cost constraints</strong>.</p>
+<section id="pretraining-sequence-only" class="level2">
+<h2 class="anchored" data-anchor-id="pretraining-sequence-only">Pretraining (sequence-only)</h2>
+<p><strong>Inputs.</strong> ID-based tokens:</p>
+<ul>
+<li>Item IDs, surface types, and action types are embedded.</li>
+<li>Tokens pass through a small input MLP with L2-norm <img src="https://latex.codecogs.com/png.latex?%5Cphi_%7B%5Ctext%7Bin%7D%7D">.</li>
+<li>A transformer backbone produces hidden states.</li>
+<li>An output MLP with L2-norm <img src="https://latex.codecogs.com/png.latex?%5Cphi_%7B%5Ctext%7Bout%7D%7D"> yields a sequence of user states <img src="https://latex.codecogs.com/png.latex?H%20=%20(H_1,%5Cdots,H_L)">.</li>
+</ul>
+<blockquote class="blockquote">
+<p>Observation: Unlike many ID-based ranking models, <strong>pretraining does not suffer from one-epoch overfitting</strong>.</p>
+</blockquote>
+<section id="contrastive-objective-infonce" class="level3">
+<h3 class="anchored" data-anchor-id="contrastive-objective-infonce">Contrastive objective (InfoNCE)</h3>
+<p>For state <img src="https://latex.codecogs.com/png.latex?H_i">, the positive is the next positively engaged item embedding <img src="https://latex.codecogs.com/png.latex?z_%7Bi+1%7D%20=%20%5Cmathrm%7Bemb%7D(%5Cmathrm%7Bid%7D_%7Bi+1%7D)">. Negatives are in-batch item embeddings excluding items positively engaged by the same user. The temperature <img src="https://latex.codecogs.com/png.latex?%5Ctau"> is learned.</p>
+<p>We minimize <img src="https://latex.codecogs.com/png.latex?%0Al(%5Cmathbf%7BH%7D_i,%20z_%7Bi+1%7D)%20=%20-%5Clog%20%5Cfrac%7B%5Cexp(sim(%5Cmathbf%7BH%7D_i,%20z_%7Bi+1%7D)/%5Ctau)%7D%7B%5Cexp(sim(%5Cmathbf%7BH%7D_i,%20z_%7Bi+1%7D)/%5Ctau)%20+%20%5Csum_%7Bk=1%7D%5E%7BK%7D%20%5Cexp(sim(%5Cmathbf%7BH%7D_i,%20z_k%5E-)/%5Ctau)%7D%0A"> which scales to large vocabularies without a full softmax.</p>
+</section>
+<section id="three-combined-losses" class="level3">
+<h3 class="anchored" data-anchor-id="three-combined-losses">Three combined losses</h3>
+<p>To better match user behavior and serving constraints, pretraining combines three InfoNCE-style losses:</p>
+<ul>
+<li><strong>NTL (Next-Token Loss):</strong> apply only when the next token is a <strong>positive</strong>.</li>
+<li><strong>MTL (Multi-Token Loss):</strong> predict <strong>all positives in a short future window</strong> to capture short-term (“sticky”) interests.</li>
+<li><strong>FTL (Future-Token Loss):</strong> emphasize the state near serve-time length <img src="https://latex.codecogs.com/png.latex?L_d"> by predicting a <strong>future window from <img src="https://latex.codecogs.com/png.latex?H_%7BL_d%7D"></strong> (instruction-tuning-style alignment).</li>
+</ul>
+<p><strong>Serve-time alignment example.</strong> Pretraining segments use <img src="https://latex.codecogs.com/png.latex?L%20=%20100">, but serving can afford only <img src="https://latex.codecogs.com/png.latex?L_d%20=%2020">. Compute <img src="https://latex.codecogs.com/png.latex?(H_1,%5Cdots,H_%7B100%7D)">, take <img src="https://latex.codecogs.com/png.latex?H_%7B20%7D">, and apply InfoNCE to predict positives in a short window (e.g., steps <img src="https://latex.codecogs.com/png.latex?21%5C!%5Cdots%5C!25">).</p>
+<hr>
+</section>
+</section>
+<section id="fine-tuning-plugging-into-rankers" class="level2">
+<h2 class="anchored" data-anchor-id="fine-tuning-plugging-into-rankers">Fine-tuning (plugging into rankers)</h2>
+<p>PinFM is added as a <strong>user-sequence module</strong> inside DLRM/DCN-style stacks. Two fusions:</p>
+<section id="late-fusion" class="level3">
+<h3 class="anchored" data-anchor-id="late-fusion">Late Fusion</h3>
+<ul>
+<li><strong>Input to PinFM:</strong> user sequence only.<br>
+</li>
+<li><strong>Output:</strong> a <strong>user embedding</strong>.</li>
+<li><strong>Crossing:</strong> the downstream ranker crosses this user embedding with candidate features.</li>
+<li><strong>Pros:</strong> easy to cache per request (identical for all candidates).</li>
+<li><strong>Cons:</strong> cannot contextualize the user history <strong>to each candidate</strong>. aka not target aware</li>
+</ul>
+</section>
+<section id="early-fusion-default" class="level3">
+<h3 class="anchored" data-anchor-id="early-fusion-default">Early Fusion (default)</h3>
+<ul>
+<li><strong>Input to PinFM:</strong> user sequence <strong>plus the candidate token appended</strong>.</li>
+<li><strong>Outputs.</strong>
+<ul>
+<li><strong>User embedding</strong>: a summary (e.g., pooling) of the user tokens’ hidden states <img src="https://latex.codecogs.com/png.latex?H_%7B1:L_d%7D">, usually computed in the context/KV-cached pass.</li>
+<li><strong>Candidate-conditioned (crossed) embedding</strong>: the final hidden state at the candidate token <img src="https://latex.codecogs.com/png.latex?H_c">, i.e., how this candidate fits this user right now.</li>
+</ul></li>
+<li><strong>Pros:</strong> stronger prediction due to candidate-conditioned encoding.</li>
+<li><strong>Caching:</strong> still efficient via <strong>DCAT</strong> (see below).</li>
+<li><strong>Extras:</strong> inject candidate features (e.g., GraphSAGE) by <strong>summing</strong> them with the candidate-ID embedding and adding a <strong>small alignment loss</strong> to force them stay in the same space.</li>
+</ul>
+<p><strong>Training notes.</strong> Early fusion is default; optionally <strong>keep NTL/MTL during fine-tune</strong>, set the PinFM learning rate <img src="https://latex.codecogs.com/png.latex?%5Capprox%20%5Ctfrac%7B1%7D%7B10%7D"> of the ranker’s, add <strong>ranking loss on PinFM outputs</strong>, and use an <strong>MSE alignment</strong> to the final prediction.</p>
+</section>
+<section id="input-sequence-construction-during-fine-tuning" class="level3">
+<h3 class="anchored" data-anchor-id="input-sequence-construction-during-fine-tuning">Input-sequence construction (during fine-tuning)</h3>
+<ul>
+<li><strong>User context tokens:</strong> the most recent <img src="https://latex.codecogs.com/png.latex?L_d"> actions (e.g., <img src="https://latex.codecogs.com/png.latex?L_d=20">).</li>
+<li><strong>Candidate token:</strong> appended for early fusion.</li>
+<li><strong>Optional features:</strong> sum content/graph embeddings into the candidate token; optionally add a small <strong>Learnable Token (LT)</strong> before the candidate to capture extra user×candidate interactions.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="cold-start-robustness" class="level2">
+<h2 class="anchored" data-anchor-id="cold-start-robustness">Cold-start robustness</h2>
+<p><strong>Problem.</strong> ID-heavy models underperform on fresh items with little ID history.</p>
+<p><strong>Mitigations.</strong></p>
+<ol type="1">
+<li><p><strong>Candidate-ID Randomization (~10%)</strong><br>
+Randomize the candidate ID about 10% of the time during fine-tune to simulate unseen IDs and force reliance on <strong>sequence context</strong> and <strong>non-ID features</strong>.</p></li>
+<li><p><strong>Item-Age-Dependent Dropout</strong><br>
+Apply stronger dropout on PinFM outputs for fresh items, right before feature crossing:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> age_days <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>:</span>
+<span id="cb1-2">    out <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Dropout(p<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.7</span>)(out)</span>
+<span id="cb1-3"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">elif</span> age_days <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">28</span>:</span>
+<span id="cb1-4">    out <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Dropout(p<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span>)(out)</span></code></pre></div></div></li>
+<li><p><strong>Feed non-ID signals into the candidate token</strong> Sum content/graph embeddings (e.g., GraphSAGE) with the candidate-ID embedding at the candidate position; consider adding a Learnable Token (LT) and exporting both the candidate-conditioned output and the intrinsic pretrained candidate-ID embedding.</p></li>
+</ol>
+</section>
+<section id="making-it-fast-enough-dcat-quantization" class="level2">
+<h2 class="anchored" data-anchor-id="making-it-fast-enough-dcat-quantization">Making it fast enough (DCAT + quantization)</h2>
+<section id="dcat-deduplicated-cross-attention-transformer." class="level3">
+<h3 class="anchored" data-anchor-id="dcat-deduplicated-cross-attention-transformer.">DCAT: Deduplicated Cross-Attention Transformer.</h3>
+<p>At serving, there are far fewer unique user sequences than items scored per request (≈1:1000) DCAT splits compute into:</p>
+<ul>
+<li><p>Context pass: user-only; KV cached.</p></li>
+<li><p>Crossing pass: candidate-conditioned cross-attention using the cached KV.</p></li>
+</ul>
+<p>Throughput gains: ~600% at serving and ~200% in training vs.&nbsp;strong baselines (same hardware class).</p>
+</section>
+<section id="embeddingtable-optimizations." class="level3">
+<h3 class="anchored" data-anchor-id="embeddingtable-optimizations.">Embedding/table optimizations.</h3>
+<p>Quantize large ID tables (e.g., int4), serve them on CPU, and ship only needed rows to GPU, reducing I/O and end-to-end latency with negligible quality loss.</p>
+</section>
+</section>
+<section id="scaling-pinfm" class="level2">
+<h2 class="anchored" data-anchor-id="scaling-pinfm">Scaling PinFM</h2>
+<section id="vocabulary-size" class="level3">
+<h3 class="anchored" data-anchor-id="vocabulary-size">Vocabulary size</h3>
+<p>Quality improves as the item vocabulary grows. Scaling item-ID rows from 20M→160M steadily boosts Home Feed Save HIT@3 (e.g., +1.98% at 160M vs.&nbsp;20M).</p>
+<p>Capacity is dominated by ID embeddings. Each item’s 256-d vector is formed by concatenating 8 sub-embeddings (32-d each), each indexed via independent hashes to reduce collisions and spread shards.</p>
+</section>
+<section id="transformer-depthwidth." class="level3">
+<h3 class="anchored" data-anchor-id="transformer-depthwidth.">Transformer depth/width.</h3>
+<p>Details beyond the 20B+ regime are not specified.</p>
+</section>
+</section>
+<section id="tldr" class="level2">
+<h2 class="anchored" data-anchor-id="tldr">TL;DR</h2>
+<ul>
+<li><p>Pretrain a large sequence-only transformer with InfoNCE (NTL/MTL/FTL) on long segments; align to serve-time length</p></li>
+<li><p>Fine-tune with early fusion so the encoder conditions on the candidate; keep auxiliary sequence losses and align to the final ranker.</p></li>
+<li><p>Harden cold-start with ID randomization, age-dependent dropout, and content/graph features at the candidate token.</p></li>
+<li><p>Ship at scale with DCAT caching, quantized ID tables, and selective row transfer to GPU.</p></li>
+<li><p>Bigger vocabularies help; embedding tables dominate capacity and benefit from multi-hash partitioning.</p></li>
+</ul>
+
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>Recsys</category>
+  <category>GenAI</category>
+  <guid>https://zzfb.github.io/posts/user-seq-foundation-model/</guid>
+  <pubDate>Wed, 01 Oct 2025 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Explain DeepSeek-R1-Zero to My Little Aurora</title>
   <dc:creator>Zhong Zhang</dc:creator>

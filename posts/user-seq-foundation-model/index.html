@@ -6,10 +6,11 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Harlow Malloc">
-<meta name="dcterms.date" content="2025-09-14">
+<meta name="author" content="Zhong Zhang">
+<meta name="dcterms.date" content="2025-10-01">
+<meta name="description" content="Overview of three sequence-modeling approaches and a deep dive on PinFM (a pretrain-then-fine-tune foundation model).">
 
-<title>Post With Code – Zhong’s ML Notes</title>
+<title>User Sequence Foundation Model – Zhong’s ML Notes</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -21,6 +22,41 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -104,7 +140,7 @@ window.Quarto = {
 <link rel="stylesheet" href="../../styles.css">
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="floating nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top quarto-banner">
@@ -145,14 +181,18 @@ window.Quarto = {
     </nav>
 </header>
 <!-- content -->
-<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Post With Code</h1>
-                                <div class="quarto-categories">
-                <div class="quarto-category">news</div>
-                <div class="quarto-category">code</div>
-                <div class="quarto-category">analysis</div>
+      <h1 class="title">User Sequence Foundation Model</h1>
+                  <div>
+        <div class="description">
+          Overview of three sequence-modeling approaches and a deep dive on PinFM (a pretrain-then-fine-tune foundation model).
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">Recsys</div>
+                <div class="quarto-category">GenAI</div>
               </div>
                   </div>
   </div>
@@ -163,14 +203,14 @@ window.Quarto = {
       <div>
       <div class="quarto-title-meta-heading">Author</div>
       <div class="quarto-title-meta-contents">
-               <p>Harlow Malloc </p>
+               <p>Zhong Zhang </p>
             </div>
     </div>
       
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">September 14, 2025</p>
+        <p class="date">October 1, 2025</p>
       </div>
     </div>
     
@@ -180,9 +220,44 @@ window.Quarto = {
   
   </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#pinfm-a-foundation-model-for-user-activity-sequences" id="toc-pinfm-a-foundation-model-for-user-activity-sequences" class="nav-link" data-scroll-target="#pinfm-a-foundation-model-for-user-activity-sequences">PinFM: A Foundation Model for User Activity Sequences</a>
+  <ul class="collapse">
+  <li><a href="#pretraining-sequence-only" id="toc-pretraining-sequence-only" class="nav-link" data-scroll-target="#pretraining-sequence-only">Pretraining (sequence-only)</a>
+  <ul class="collapse">
+  <li><a href="#contrastive-objective-infonce" id="toc-contrastive-objective-infonce" class="nav-link" data-scroll-target="#contrastive-objective-infonce">Contrastive objective (InfoNCE)</a></li>
+  <li><a href="#three-combined-losses" id="toc-three-combined-losses" class="nav-link" data-scroll-target="#three-combined-losses">Three combined losses</a></li>
+  </ul></li>
+  <li><a href="#fine-tuning-plugging-into-rankers" id="toc-fine-tuning-plugging-into-rankers" class="nav-link" data-scroll-target="#fine-tuning-plugging-into-rankers">Fine-tuning (plugging into rankers)</a>
+  <ul class="collapse">
+  <li><a href="#late-fusion" id="toc-late-fusion" class="nav-link" data-scroll-target="#late-fusion">Late Fusion</a></li>
+  <li><a href="#early-fusion-default" id="toc-early-fusion-default" class="nav-link" data-scroll-target="#early-fusion-default">Early Fusion (default)</a></li>
+  <li><a href="#input-sequence-construction-during-fine-tuning" id="toc-input-sequence-construction-during-fine-tuning" class="nav-link" data-scroll-target="#input-sequence-construction-during-fine-tuning">Input-sequence construction (during fine-tuning)</a></li>
+  </ul></li>
+  <li><a href="#cold-start-robustness" id="toc-cold-start-robustness" class="nav-link" data-scroll-target="#cold-start-robustness">Cold-start robustness</a></li>
+  <li><a href="#making-it-fast-enough-dcat-quantization" id="toc-making-it-fast-enough-dcat-quantization" class="nav-link" data-scroll-target="#making-it-fast-enough-dcat-quantization">Making it fast enough (DCAT + quantization)</a>
+  <ul class="collapse">
+  <li><a href="#dcat-deduplicated-cross-attention-transformer." id="toc-dcat-deduplicated-cross-attention-transformer." class="nav-link" data-scroll-target="#dcat-deduplicated-cross-attention-transformer.">DCAT: Deduplicated Cross-Attention Transformer.</a></li>
+  <li><a href="#embeddingtable-optimizations." id="toc-embeddingtable-optimizations." class="nav-link" data-scroll-target="#embeddingtable-optimizations.">Embedding/table optimizations.</a></li>
+  </ul></li>
+  <li><a href="#scaling-pinfm" id="toc-scaling-pinfm" class="nav-link" data-scroll-target="#scaling-pinfm">Scaling PinFM</a>
+  <ul class="collapse">
+  <li><a href="#vocabulary-size" id="toc-vocabulary-size" class="nav-link" data-scroll-target="#vocabulary-size">Vocabulary size</a></li>
+  <li><a href="#transformer-depthwidth." id="toc-transformer-depthwidth." class="nav-link" data-scroll-target="#transformer-depthwidth.">Transformer depth/width.</a></li>
+  </ul></li>
+  <li><a href="#tldr" id="toc-tldr" class="nav-link" data-scroll-target="#tldr">TL;DR</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
     </div>
 <!-- main -->
 <main class="content quarto-banner-title-block" id="quarto-document-content">
@@ -191,10 +266,148 @@ window.Quarto = {
 
 
 
-<p>This is a post with executable code.</p>
+<section id="overview" class="level1">
+<h1>Overview</h1>
+<p>There are three main approaches to user-sequence modeling:</p>
+<ol type="1">
+<li><strong>Pure sequential models</strong> that treat the clickstream as a standalone sequence and learn end-to-end (e.g., Meta’s HSTU).</li>
+<li><strong>Sequence encoders inside existing recommender architectures</strong>, where a transformer encodes the user’s activity sequence and its representation is fed to the ranker (e.g., TransAct1&amp;2, TWIN1&amp;2).</li>
+<li><strong>Pretrain-then-fine-tune foundation models</strong>, where a sequence-only model is pretrained across applications on large-scale user activity and then fine-tuned alongside task-specific features in downstream models.</li>
+</ol>
+<p>This note focuses on <strong>PinFM</strong>, a representative of approach (3).</p>
+<hr>
+</section>
+<section id="pinfm-a-foundation-model-for-user-activity-sequences" class="level1">
+<h1>PinFM: A Foundation Model for User Activity Sequences</h1>
+<p>A billion-scale visual discovery platform trains a large transformer (<strong>20B+ parameters</strong>) on two years of user activity sequences, then plugs it into multiple downstream ranking stacks (e.g., Home Feed, Item-to-Item). The aim is to <strong>reuse one strong sequence encoder across apps</strong> under <strong>hard latency/cost constraints</strong>.</p>
+<section id="pretraining-sequence-only" class="level2">
+<h2 class="anchored" data-anchor-id="pretraining-sequence-only">Pretraining (sequence-only)</h2>
+<p><strong>Inputs.</strong> ID-based tokens:</p>
+<ul>
+<li>Item IDs, surface types, and action types are embedded.</li>
+<li>Tokens pass through a small input MLP with L2-norm <span class="math inline">\(\phi_{\text{in}}\)</span>.</li>
+<li>A transformer backbone produces hidden states.</li>
+<li>An output MLP with L2-norm <span class="math inline">\(\phi_{\text{out}}\)</span> yields a sequence of user states <span class="math inline">\(H = (H_1,\dots,H_L)\)</span>.</li>
+</ul>
+<blockquote class="blockquote">
+<p>Observation: Unlike many ID-based ranking models, <strong>pretraining does not suffer from one-epoch overfitting</strong>.</p>
+</blockquote>
+<section id="contrastive-objective-infonce" class="level3">
+<h3 class="anchored" data-anchor-id="contrastive-objective-infonce">Contrastive objective (InfoNCE)</h3>
+<p>For state <span class="math inline">\(H_i\)</span>, the positive is the next positively engaged item embedding <span class="math inline">\(z_{i+1} = \mathrm{emb}(\mathrm{id}_{i+1})\)</span>. Negatives are in-batch item embeddings excluding items positively engaged by the same user. The temperature <span class="math inline">\(\tau\)</span> is learned.</p>
+<p>We minimize <span class="math display">\[
+l(\mathbf{H}_i, z_{i+1}) = -\log \frac{\exp(sim(\mathbf{H}_i, z_{i+1})/\tau)}{\exp(sim(\mathbf{H}_i, z_{i+1})/\tau) + \sum_{k=1}^{K} \exp(sim(\mathbf{H}_i, z_k^-)/\tau)}
+\]</span> which scales to large vocabularies without a full softmax.</p>
+</section>
+<section id="three-combined-losses" class="level3">
+<h3 class="anchored" data-anchor-id="three-combined-losses">Three combined losses</h3>
+<p>To better match user behavior and serving constraints, pretraining combines three InfoNCE-style losses:</p>
+<ul>
+<li><strong>NTL (Next-Token Loss):</strong> apply only when the next token is a <strong>positive</strong>.</li>
+<li><strong>MTL (Multi-Token Loss):</strong> predict <strong>all positives in a short future window</strong> to capture short-term (“sticky”) interests.</li>
+<li><strong>FTL (Future-Token Loss):</strong> emphasize the state near serve-time length <span class="math inline">\(L_d\)</span> by predicting a <strong>future window from <span class="math inline">\(H_{L_d}\)</span></strong> (instruction-tuning-style alignment).</li>
+</ul>
+<p><strong>Serve-time alignment example.</strong> Pretraining segments use <span class="math inline">\(L = 100\)</span>, but serving can afford only <span class="math inline">\(L_d = 20\)</span>. Compute <span class="math inline">\((H_1,\dots,H_{100})\)</span>, take <span class="math inline">\(H_{20}\)</span>, and apply InfoNCE to predict positives in a short window (e.g., steps <span class="math inline">\(21\!\dots\!25\)</span>).</p>
+<hr>
+</section>
+</section>
+<section id="fine-tuning-plugging-into-rankers" class="level2">
+<h2 class="anchored" data-anchor-id="fine-tuning-plugging-into-rankers">Fine-tuning (plugging into rankers)</h2>
+<p>PinFM is added as a <strong>user-sequence module</strong> inside DLRM/DCN-style stacks. Two fusions:</p>
+<section id="late-fusion" class="level3">
+<h3 class="anchored" data-anchor-id="late-fusion">Late Fusion</h3>
+<ul>
+<li><strong>Input to PinFM:</strong> user sequence only.<br>
+</li>
+<li><strong>Output:</strong> a <strong>user embedding</strong>.</li>
+<li><strong>Crossing:</strong> the downstream ranker crosses this user embedding with candidate features.</li>
+<li><strong>Pros:</strong> easy to cache per request (identical for all candidates).</li>
+<li><strong>Cons:</strong> cannot contextualize the user history <strong>to each candidate</strong>. aka not target aware</li>
+</ul>
+</section>
+<section id="early-fusion-default" class="level3">
+<h3 class="anchored" data-anchor-id="early-fusion-default">Early Fusion (default)</h3>
+<ul>
+<li><strong>Input to PinFM:</strong> user sequence <strong>plus the candidate token appended</strong>.</li>
+<li><strong>Outputs.</strong>
+<ul>
+<li><strong>User embedding</strong>: a summary (e.g., pooling) of the user tokens’ hidden states <span class="math inline">\(H_{1:L_d}\)</span>, usually computed in the context/KV-cached pass.</li>
+<li><strong>Candidate-conditioned (crossed) embedding</strong>: the final hidden state at the candidate token <span class="math inline">\(H_c\)</span>, i.e., how this candidate fits this user right now.</li>
+</ul></li>
+<li><strong>Pros:</strong> stronger prediction due to candidate-conditioned encoding.</li>
+<li><strong>Caching:</strong> still efficient via <strong>DCAT</strong> (see below).</li>
+<li><strong>Extras:</strong> inject candidate features (e.g., GraphSAGE) by <strong>summing</strong> them with the candidate-ID embedding and adding a <strong>small alignment loss</strong> to force them stay in the same space.</li>
+</ul>
+<p><strong>Training notes.</strong> Early fusion is default; optionally <strong>keep NTL/MTL during fine-tune</strong>, set the PinFM learning rate <span class="math inline">\(\approx \tfrac{1}{10}\)</span> of the ranker’s, add <strong>ranking loss on PinFM outputs</strong>, and use an <strong>MSE alignment</strong> to the final prediction.</p>
+</section>
+<section id="input-sequence-construction-during-fine-tuning" class="level3">
+<h3 class="anchored" data-anchor-id="input-sequence-construction-during-fine-tuning">Input-sequence construction (during fine-tuning)</h3>
+<ul>
+<li><strong>User context tokens:</strong> the most recent <span class="math inline">\(L_d\)</span> actions (e.g., <span class="math inline">\(L_d=20\)</span>).</li>
+<li><strong>Candidate token:</strong> appended for early fusion.</li>
+<li><strong>Optional features:</strong> sum content/graph embeddings into the candidate token; optionally add a small <strong>Learnable Token (LT)</strong> before the candidate to capture extra user×candidate interactions.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="cold-start-robustness" class="level2">
+<h2 class="anchored" data-anchor-id="cold-start-robustness">Cold-start robustness</h2>
+<p><strong>Problem.</strong> ID-heavy models underperform on fresh items with little ID history.</p>
+<p><strong>Mitigations.</strong></p>
+<ol type="1">
+<li><p><strong>Candidate-ID Randomization (~10%)</strong><br>
+Randomize the candidate ID about 10% of the time during fine-tune to simulate unseen IDs and force reliance on <strong>sequence context</strong> and <strong>non-ID features</strong>.</p></li>
+<li><p><strong>Item-Age-Dependent Dropout</strong><br>
+Apply stronger dropout on PinFM outputs for fresh items, right before feature crossing:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> age_days <span class="op">&lt;</span> <span class="dv">7</span>:</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> Dropout(p<span class="op">=</span><span class="fl">0.7</span>)(out)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="cf">elif</span> age_days <span class="op">&lt;</span> <span class="dv">28</span>:</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> Dropout(p<span class="op">=</span><span class="fl">0.5</span>)(out)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p><strong>Feed non-ID signals into the candidate token</strong> Sum content/graph embeddings (e.g., GraphSAGE) with the candidate-ID embedding at the candidate position; consider adding a Learnable Token (LT) and exporting both the candidate-conditioned output and the intrinsic pretrained candidate-ID embedding.</p></li>
+</ol>
+</section>
+<section id="making-it-fast-enough-dcat-quantization" class="level2">
+<h2 class="anchored" data-anchor-id="making-it-fast-enough-dcat-quantization">Making it fast enough (DCAT + quantization)</h2>
+<section id="dcat-deduplicated-cross-attention-transformer." class="level3">
+<h3 class="anchored" data-anchor-id="dcat-deduplicated-cross-attention-transformer.">DCAT: Deduplicated Cross-Attention Transformer.</h3>
+<p>At serving, there are far fewer unique user sequences than items scored per request (≈1:1000) DCAT splits compute into:</p>
+<ul>
+<li><p>Context pass: user-only; KV cached.</p></li>
+<li><p>Crossing pass: candidate-conditioned cross-attention using the cached KV.</p></li>
+</ul>
+<p>Throughput gains: ~600% at serving and ~200% in training vs.&nbsp;strong baselines (same hardware class).</p>
+</section>
+<section id="embeddingtable-optimizations." class="level3">
+<h3 class="anchored" data-anchor-id="embeddingtable-optimizations.">Embedding/table optimizations.</h3>
+<p>Quantize large ID tables (e.g., int4), serve them on CPU, and ship only needed rows to GPU, reducing I/O and end-to-end latency with negligible quality loss.</p>
+</section>
+</section>
+<section id="scaling-pinfm" class="level2">
+<h2 class="anchored" data-anchor-id="scaling-pinfm">Scaling PinFM</h2>
+<section id="vocabulary-size" class="level3">
+<h3 class="anchored" data-anchor-id="vocabulary-size">Vocabulary size</h3>
+<p>Quality improves as the item vocabulary grows. Scaling item-ID rows from 20M→160M steadily boosts Home Feed Save HIT@3 (e.g., +1.98% at 160M vs.&nbsp;20M).</p>
+<p>Capacity is dominated by ID embeddings. Each item’s 256-d vector is formed by concatenating 8 sub-embeddings (32-d each), each indexed via independent hashes to reduce collisions and spread shards.</p>
+</section>
+<section id="transformer-depthwidth." class="level3">
+<h3 class="anchored" data-anchor-id="transformer-depthwidth.">Transformer depth/width.</h3>
+<p>Details beyond the 20B+ regime are not specified.</p>
+</section>
+</section>
+<section id="tldr" class="level2">
+<h2 class="anchored" data-anchor-id="tldr">TL;DR</h2>
+<ul>
+<li><p>Pretrain a large sequence-only transformer with InfoNCE (NTL/MTL/FTL) on long segments; align to serve-time length</p></li>
+<li><p>Fine-tune with early fusion so the encoder conditions on the candidate; keep auxiliary sequence losses and align to the final ranker.</p></li>
+<li><p>Harden cold-start with ID randomization, age-dependent dropout, and content/graph features at the candidate token.</p></li>
+<li><p>Ship at scale with DCAT caching, quantized ID tables, and selective row transfer to GPU.</p></li>
+<li><p>Bigger vocabularies help; embedding tables dominate capacity and benefit from multi-hash partitioning.</p></li>
+</ul>
 
 
 
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -270,7 +483,7 @@ window.Quarto = {
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/your-website-url\.example\.com");
+        var filterRegex = new RegExp("https:\/\/zzfb\.github\.io");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

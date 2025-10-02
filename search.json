@@ -63,10 +63,59 @@
     "text": "Reference\n\n深度强化学习(1/5)：基本概念 Deep Reinforcement Learning (1/5)\nhttps://x.com/karpathy/status/1885026028428681698\nDeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning, link\nTrain your own R1 reasoning model with Unsloth (GRPO) link\nhttps://gist.github.com/willccbb/4676755236bb08cab5f4e54a0475d6fb"
   },
   {
+    "objectID": "posts/user-seq-foundation-model/index.html",
+    "href": "posts/user-seq-foundation-model/index.html",
+    "title": "User Sequence Foundation Model",
+    "section": "",
+    "text": "There are three main approaches to user-sequence modeling:\n\nPure sequential models that treat the clickstream as a standalone sequence and learn end-to-end (e.g., Meta’s HSTU).\nSequence encoders inside existing recommender architectures, where a transformer encodes the user’s activity sequence and its representation is fed to the ranker (e.g., TransAct1&2, TWIN1&2).\nPretrain-then-fine-tune foundation models, where a sequence-only model is pretrained across applications on large-scale user activity and then fine-tuned alongside task-specific features in downstream models.\n\nThis note focuses on PinFM, a representative of approach (3)."
+  },
+  {
+    "objectID": "posts/user-seq-foundation-model/index.html#pretraining-sequence-only",
+    "href": "posts/user-seq-foundation-model/index.html#pretraining-sequence-only",
+    "title": "User Sequence Foundation Model",
+    "section": "Pretraining (sequence-only)",
+    "text": "Pretraining (sequence-only)\nInputs. ID-based tokens:\n\nItem IDs, surface types, and action types are embedded.\nTokens pass through a small input MLP with L2-norm \\(\\phi_{\\text{in}}\\).\nA transformer backbone produces hidden states.\nAn output MLP with L2-norm \\(\\phi_{\\text{out}}\\) yields a sequence of user states \\(H = (H_1,\\dots,H_L)\\).\n\n\nObservation: Unlike many ID-based ranking models, pretraining does not suffer from one-epoch overfitting.\n\n\nContrastive objective (InfoNCE)\nFor state \\(H_i\\), the positive is the next positively engaged item embedding \\(z_{i+1} = \\mathrm{emb}(\\mathrm{id}_{i+1})\\). Negatives are in-batch item embeddings excluding items positively engaged by the same user. The temperature \\(\\tau\\) is learned.\nWe minimize \\[\nl(\\mathbf{H}_i, z_{i+1}) = -\\log \\frac{\\exp(sim(\\mathbf{H}_i, z_{i+1})/\\tau)}{\\exp(sim(\\mathbf{H}_i, z_{i+1})/\\tau) + \\sum_{k=1}^{K} \\exp(sim(\\mathbf{H}_i, z_k^-)/\\tau)}\n\\] which scales to large vocabularies without a full softmax.\n\n\nThree combined losses\nTo better match user behavior and serving constraints, pretraining combines three InfoNCE-style losses:\n\nNTL (Next-Token Loss): apply only when the next token is a positive.\nMTL (Multi-Token Loss): predict all positives in a short future window to capture short-term (“sticky”) interests.\nFTL (Future-Token Loss): emphasize the state near serve-time length \\(L_d\\) by predicting a future window from \\(H_{L_d}\\) (instruction-tuning-style alignment).\n\nServe-time alignment example. Pretraining segments use \\(L = 100\\), but serving can afford only \\(L_d = 20\\). Compute \\((H_1,\\dots,H_{100})\\), take \\(H_{20}\\), and apply InfoNCE to predict positives in a short window (e.g., steps \\(21\\!\\dots\\!25\\))."
+  },
+  {
+    "objectID": "posts/user-seq-foundation-model/index.html#fine-tuning-plugging-into-rankers",
+    "href": "posts/user-seq-foundation-model/index.html#fine-tuning-plugging-into-rankers",
+    "title": "User Sequence Foundation Model",
+    "section": "Fine-tuning (plugging into rankers)",
+    "text": "Fine-tuning (plugging into rankers)\nPinFM is added as a user-sequence module inside DLRM/DCN-style stacks. Two fusions:\n\nLate Fusion\n\nInput to PinFM: user sequence only.\n\nOutput: a user embedding.\nCrossing: the downstream ranker crosses this user embedding with candidate features.\nPros: easy to cache per request (identical for all candidates).\nCons: cannot contextualize the user history to each candidate. aka not target aware\n\n\n\nEarly Fusion (default)\n\nInput to PinFM: user sequence plus the candidate token appended.\nOutputs.\n\nUser embedding: a summary (e.g., pooling) of the user tokens’ hidden states \\(H_{1:L_d}\\), usually computed in the context/KV-cached pass.\nCandidate-conditioned (crossed) embedding: the final hidden state at the candidate token \\(H_c\\), i.e., how this candidate fits this user right now.\n\nPros: stronger prediction due to candidate-conditioned encoding.\nCaching: still efficient via DCAT (see below).\nExtras: inject candidate features (e.g., GraphSAGE) by summing them with the candidate-ID embedding and adding a small alignment loss to force them stay in the same space.\n\nTraining notes. Early fusion is default; optionally keep NTL/MTL during fine-tune, set the PinFM learning rate \\(\\approx \\tfrac{1}{10}\\) of the ranker’s, add ranking loss on PinFM outputs, and use an MSE alignment to the final prediction.\n\n\nInput-sequence construction (during fine-tuning)\n\nUser context tokens: the most recent \\(L_d\\) actions (e.g., \\(L_d=20\\)).\nCandidate token: appended for early fusion.\nOptional features: sum content/graph embeddings into the candidate token; optionally add a small Learnable Token (LT) before the candidate to capture extra user×candidate interactions."
+  },
+  {
+    "objectID": "posts/user-seq-foundation-model/index.html#cold-start-robustness",
+    "href": "posts/user-seq-foundation-model/index.html#cold-start-robustness",
+    "title": "User Sequence Foundation Model",
+    "section": "Cold-start robustness",
+    "text": "Cold-start robustness\nProblem. ID-heavy models underperform on fresh items with little ID history.\nMitigations.\n\nCandidate-ID Randomization (~10%)\nRandomize the candidate ID about 10% of the time during fine-tune to simulate unseen IDs and force reliance on sequence context and non-ID features.\nItem-Age-Dependent Dropout\nApply stronger dropout on PinFM outputs for fresh items, right before feature crossing:\nif age_days &lt; 7:\n    out = Dropout(p=0.7)(out)\nelif age_days &lt; 28:\n    out = Dropout(p=0.5)(out)\nFeed non-ID signals into the candidate token Sum content/graph embeddings (e.g., GraphSAGE) with the candidate-ID embedding at the candidate position; consider adding a Learnable Token (LT) and exporting both the candidate-conditioned output and the intrinsic pretrained candidate-ID embedding."
+  },
+  {
+    "objectID": "posts/user-seq-foundation-model/index.html#making-it-fast-enough-dcat-quantization",
+    "href": "posts/user-seq-foundation-model/index.html#making-it-fast-enough-dcat-quantization",
+    "title": "User Sequence Foundation Model",
+    "section": "Making it fast enough (DCAT + quantization)",
+    "text": "Making it fast enough (DCAT + quantization)\n\nDCAT: Deduplicated Cross-Attention Transformer.\nAt serving, there are far fewer unique user sequences than items scored per request (≈1:1000) DCAT splits compute into:\n\nContext pass: user-only; KV cached.\nCrossing pass: candidate-conditioned cross-attention using the cached KV.\n\nThroughput gains: ~600% at serving and ~200% in training vs. strong baselines (same hardware class).\n\n\nEmbedding/table optimizations.\nQuantize large ID tables (e.g., int4), serve them on CPU, and ship only needed rows to GPU, reducing I/O and end-to-end latency with negligible quality loss."
+  },
+  {
+    "objectID": "posts/user-seq-foundation-model/index.html#scaling-pinfm",
+    "href": "posts/user-seq-foundation-model/index.html#scaling-pinfm",
+    "title": "User Sequence Foundation Model",
+    "section": "Scaling PinFM",
+    "text": "Scaling PinFM\n\nVocabulary size\nQuality improves as the item vocabulary grows. Scaling item-ID rows from 20M→160M steadily boosts Home Feed Save HIT@3 (e.g., +1.98% at 160M vs. 20M).\nCapacity is dominated by ID embeddings. Each item’s 256-d vector is formed by concatenating 8 sub-embeddings (32-d each), each indexed via independent hashes to reduce collisions and spread shards.\n\n\nTransformer depth/width.\nDetails beyond the 20B+ regime are not specified."
+  },
+  {
+    "objectID": "posts/user-seq-foundation-model/index.html#tldr",
+    "href": "posts/user-seq-foundation-model/index.html#tldr",
+    "title": "User Sequence Foundation Model",
+    "section": "TL;DR",
+    "text": "TL;DR\n\nPretrain a large sequence-only transformer with InfoNCE (NTL/MTL/FTL) on long segments; align to serve-time length\nFine-tune with early fusion so the encoder conditions on the candidate; keep auxiliary sequence losses and align to the final ranker.\nHarden cold-start with ID randomization, age-dependent dropout, and content/graph features at the candidate token.\nShip at scale with DCAT caching, quantized ID tables, and selective row transfer to GPU.\nBigger vocabularies help; embedding tables dominate capacity and benefit from multi-hash partitioning."
+  },
+  {
     "objectID": "index.html",
     "href": "index.html",
     "title": "blog",
     "section": "",
-    "text": "Explain DeepSeek-R1-Zero to My Little Aurora\n\n\n\nAI\n\nLLM\n\nRL\n\n\n\nDeepSeek-R1-Zero plain explanation\n\n\n\n\n\nSep 14, 2025\n\n\nZhong Zhang\n\n\n\n\n\nNo matching items"
+    "text": "User Sequence Foundation Model\n\n\n\nRecsys\n\nGenAI\n\n\n\nOverview of three sequence-modeling approaches and a deep dive on PinFM (a pretrain-then-fine-tune foundation model).\n\n\n\n\n\nOct 1, 2025\n\n\nZhong Zhang\n\n\n\n\n\n\n\n\n\n\n\n\nExplain DeepSeek-R1-Zero to My Little Aurora\n\n\n\nAI\n\nLLM\n\nRL\n\n\n\nDeepSeek-R1-Zero plain explanation\n\n\n\n\n\nSep 14, 2025\n\n\nZhong Zhang\n\n\n\n\n\nNo matching items"
   }
 ]
