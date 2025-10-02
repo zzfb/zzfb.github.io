@@ -63,13 +63,6 @@
     "text": "Reference\n\n深度强化学习(1/5)：基本概念 Deep Reinforcement Learning (1/5)\nhttps://x.com/karpathy/status/1885026028428681698\nDeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning, link\nTrain your own R1 reasoning model with Unsloth (GRPO) link\nhttps://gist.github.com/willccbb/4676755236bb08cab5f4e54a0475d6fb"
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "blog",
-    "section": "",
-    "text": "User Sequence Foundation Model\n\n\n\nRecsys\n\nGenAI\n\n\n\nOverview of three sequence-modeling approaches and a deep dive on PinFM (a pretrain-then-fine-tune foundation model).\n\n\n\n\n\nOct 1, 2025\n\n\nZhong Zhang\n\n\n\n\n\n\n\n\n\n\n\n\nExplain DeepSeek-R1-Zero to My Little Aurora\n\n\n\nAI\n\nLLM\n\nRL\n\n\n\nDeepSeek-R1-Zero plain explanation\n\n\n\n\n\nSep 14, 2025\n\n\nZhong Zhang\n\n\n\n\n\nNo matching items"
-  },
-  {
     "objectID": "posts/user-seq-foundation-model/index.html",
     "href": "posts/user-seq-foundation-model/index.html",
     "title": "User Sequence Foundation Model",
@@ -117,5 +110,12 @@
     "title": "User Sequence Foundation Model",
     "section": "TL;DR",
     "text": "TL;DR\n\nPretrain a large sequence-only transformer with InfoNCE (NTL/MTL/FTL) on long segments; align to serve-time length\nFine-tune with early fusion so the encoder conditions on the candidate; keep auxiliary sequence losses and align to the final ranker.\nHarden cold-start with ID randomization, age-dependent dropout, and content/graph features at the candidate token.\nShip at scale with DCAT caching, quantized ID tables, and selective row transfer to GPU.\nBigger vocabularies help; embedding tables dominate capacity and benefit from multi-hash partitioning."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "blog",
+    "section": "",
+    "text": "User Sequence Foundation Model\n\n\n\nRecsys\n\nGenAI\n\n\n\nOverview of three sequence-modeling approaches and a deep dive on PinFM (a pretrain-then-fine-tune foundation model).\n\n\n\n\n\nOct 1, 2025\n\n\nZhong Zhang\n\n\n\n\n\n\n\n\n\n\n\n\nExplain DeepSeek-R1-Zero to My Little Aurora\n\n\n\nAI\n\nLLM\n\nRL\n\n\n\nDeepSeek-R1-Zero plain explanation\n\n\n\n\n\nSep 14, 2025\n\n\nZhong Zhang\n\n\n\n\n\nNo matching items"
   }
 ]
