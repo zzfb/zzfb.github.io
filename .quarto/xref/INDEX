@@ -17,5 +17,11 @@
   "posts/user-seq-foundation-model/index.qmd": {
     "index.html": "104c38e0",
     "index.tex": "4af9a6b6"
+  },
+  "posts/rec-search-playbook-ch1/index.qmd": {
+    "index.html": "bbf0589c"
+  },
+  "posts/rec-search-playbook-ch2/index.qmd": {
+    "index.html": "3408e80b"
   }
 }

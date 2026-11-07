@@ -1,0 +1,195 @@
+---
+title: "Recommendation & Search Playbook, Chapter 2: Loss Functions and Offline Metrics"
+author: "Zhong Zhang"
+date: "2026-11-06"
+categories: [Recsys, Ranking, Playbook]
+description: "Label vs loss vs offline metric vs online metric: pointwise, pairwise and listwise losses, PNR and NDCG worked on one e-commerce example, and the gaps between NDCG and GMV."
+format:
+  html:
+    toc: true
+    toc-location: left
+    number-sections: false
+    html-math-method: mathjax
+---
+
+*Part of my **Recommendation & Search Playbook**: a working playbook for recommendation and search systems — what to measure, how to build, and how to explain it in interviews. All numbers in examples are illustrative unless a source is named.*
+
+[Chapter 1](../rec-search-playbook-ch1/index.qmd) covered what the business wants. This chapter covers the two layers below it: what the model optimizes (the loss) and what you measure before an A/B test (the offline metric). Most ranking problems come from the gaps between these layers.
+
+All examples use one running case: e-commerce search on a marketplace. For each query, the system returns a list of products. Users can click, add to cart, or order. The weights below are illustrative.
+
+# 2.1 Three layers of one goal
+
+Each layer is a proxy for the layer above it. The loss is what the model can optimize. The offline metric is what you can measure cheaply. The online metric is what the business wants.
+
+|  | Loss (ML objective) | Offline metric (e.g. NDCG@k) | Online metric (e.g. GMV) |
+|---|---|---|---|
+| Question it answers | Which direction should the weights move? | Does the new model rank the logged items better? | Did the business make more money? |
+| Computed on | Training logs, per query list | Held-out logs, per query list | Live traffic in an A/B test |
+| Differentiable? | Yes, it must be | No, it depends on sorting | No |
+| Uses price? | Only if price is in the label | Only if price is in the gain | Yes, built in |
+| Speed | Every training step | Minutes | 1–4 weeks |
+| Role | Training signal | Gate before the A/B test | Launch decision |
+
+The book Search Engine Technology (Wang) uses the same order: offline metrics come first, and you start an A/B test only after you see an offline gain.
+
+# 2.2 The label is not the loss
+
+A common shortcut is to call a formula like the one below a "composite loss". It is a **label** (also called the target or the gain). The loss is the function that uses this label.
+
+$$
+y = 0.1 \times \text{click} + 1 \times \text{cart} + 5 \times \text{order}
+$$
+
+**The label is cumulative.** An order also has a click and a cart. So an ordered product gets 0.1 + 1 + 5 = 6.1, not 5.
+
+**Running example — one query, four products.**
+
+| Product | User action | Label y |
+|---|---|---|
+| A | Click only | 0.1 |
+| B | Click + cart + order | 6.1 |
+| C | No action | 0 |
+| D | Click + cart, no order | 1.1 |
+
+The ideal order is B, D, A, C.
+
+Two models rank this list:
+
+- **Model 1:** A, D, B, C (the ordered product is at position 3)
+- **Model 2:** B, D, A, C (the ideal order)
+
+# 2.3 Loss functions
+
+In ranking, the model does not need to predict y exactly. It needs to put the products **in the same order** as y. The three families differ in how they treat this.
+
+**Pointwise.** Treat each (query, product) pair as an independent sample. Fit the score to y with MSE (or cross-entropy if y is scaled to [0, 1]).
+
+$$
+L_{\text{point}} = \frac{1}{k}\sum_{i=1}^{k}\big(f(x_i) - y_i\big)^2
+$$
+
+- **Problem:** it keeps the value, not the order. If you add a constant δ to every score, the MSE gets much worse, but the ranking does not change.
+- **Use:** a good first baseline. It is simple, hard to get wrong, and often not much worse than the others.
+
+**Pairwise (RankNet).** Look at every pair where y_i > y_j. Push score p_i above score p_j.
+
+$$
+L_{\text{pair}} = \frac{1}{n}\sum_{(i,j):\,y_i > y_j}\ln\big(1 + e^{-(p_i - p_j)}\big)
+$$
+
+- In the running example there are 6 ordered pairs: B>D, B>A, B>C, D>A, D>C, A>C.
+- **Strength:** every pair gives a full gradient signal, even when two labels are close (for example 1.1 vs 1).
+- **Two flaws:** it ignores how much larger y_i is than y_j, and it ignores where the pair is in the list. A wrong pair at positions 1–2 costs the same as a wrong pair at positions 40–41.
+
+**Listwise — softmax cross-entropy.** Turn the labels into target shares and the scores into a softmax. Minimize the cross-entropy between them.
+
+$$
+L_{\text{list}} = -\sum_{i=1}^{k}\frac{y_i}{\sum_j y_j}\,\ln\frac{e^{p_i}}{\sum_j e^{p_j}}
+$$
+
+- Target shares in the example: B = 6.1 / 7.3 = 84%, D = 15%, A = 1.4%, C = 0%.
+- **Strength:** it sees the whole list, and large labels pull hard.
+- **Weakness:** small label differences produce small target differences. If most labels are nearly equal, the signal is weak.
+
+**Listwise — LambdaRank.** Take the RankNet pair loss and multiply each pair by |ΔNDCG|, the change in NDCG if you swap the two products.
+
+$$
+L_{\lambda} = \frac{1}{n}\sum_{(i,j):\,y_i > y_j}|\Delta\text{NDCG}_{ij}|\cdot\ln\big(1 + e^{-(p_i - p_j)}\big)
+$$
+
+- **Example (Model 1, linear gain).** Swapping B (position 3) and A (position 1) changes NDCG by 0.44. Swapping A (position 1) and C (position 4) changes NDCG by 0.008. So the B–A pair gets about 50× more weight.
+- **Result:** mistakes at the top of the list cost more. This fixes both RankNet flaws.
+
+# 2.4 Offline metrics
+
+Offline metrics follow the same three families.
+
+| Family | Metrics | What it checks |
+|---|---|---|
+| Pointwise | MSE, precision, recall, F1, AUC | Is each score correct on its own? |
+| Pairwise | PNR (correct pairs ÷ wrong pairs) | Is the order correct? |
+| Listwise | DCG@k, NDCG@k | Is the order correct, with more weight at the top? |
+
+**PNR on the running example.**
+
+- Model 1 (A, D, B, C): correct pairs B>C, D>C, A>C; wrong pairs B>D, B>A, D>A. PNR = 3 / 3 = **1.0**.
+- Model 2 (B, D, A, C): all 6 pairs correct. PNR = 6 / 0 = **∞** (perfect).
+
+**DCG and NDCG.**
+
+$$
+\text{DCG@}k = \sum_{i=1}^{k}\frac{\text{gain}(y_i)}{\log_2(i+1)}, \qquad \text{NDCG@}k = \frac{\text{DCG@}k}{\text{IDCG@}k}
+$$
+
+IDCG is the DCG of the ideal order. Position discounts: 1.00, 0.63, 0.50, 0.43.
+
+|  | Linear gain (gain = y) | Exponential gain (gain = 2^y − 1) |
+|---|---|---|
+| Gains B, D, A, C | 6.1, 1.1, 0.1, 0 | 67.6, 1.14, 0.07, 0 |
+| IDCG@4 | 6.84 | 68.36 |
+| Model 1 DCG@4 | 0.1 + 0.69 + 3.05 = 3.84 | 0.07 + 0.72 + 33.8 = 34.6 |
+| Model 1 NDCG@4 | **0.56** | **0.51** |
+| Model 2 NDCG@4 | **1.0** | **1.0** |
+
+Exponential gain makes the order much more important than the click. With it, one order is worth about 940 clicks, not 61.
+
+**Why listwise metrics win.** Two rankings can have the same PNR but differ in where the mistakes are. Users care most about the top of the list, so only NDCG tells them apart.
+
+**IDCG trap.** When you compare two models, compute IDCG from the union of both models' products. If each model uses its own IDCG, a worse list can get a higher NDCG.
+
+# 2.5 Match the loss to the metric
+
+| If you report… | Train with… | Why |
+|---|---|---|
+| MSE, AUC | Pointwise | Same target |
+| PNR | Pairwise (RankNet) | It directly maximizes correct pairs |
+| NDCG | Listwise (LambdaRank or softmax) | It weights the top of the list |
+
+Use **the same gain** in the loss and the metric. If the loss treats an order as 6.1 but NDCG uses 2^6.1 − 1 = 67.6, the two layers disagree on what an order is worth.
+
+# 2.6 The gaps between the layers
+
+**Gap 1: loss → offline metric (small).**
+
+- **The loss is a surrogate.** Smooth losses stand in for a sorting metric. Lower loss usually means higher NDCG, but not always.
+- **No position weight.** Pointwise and plain RankNet treat every mistake the same. LambdaRank tracks NDCG better because it weights each pair by |ΔNDCG|.
+- **Gain mismatch.** The loss and the metric use different gains (see 2.5).
+
+**Gap 2: offline metric → online metric (large).**
+
+1. **No price in the label.** A \$40 order and a \$4,000 order both get y = 6.1. Suppose a new model improves 90 small-basket queries and hurts 10 large-basket queries. Mean NDCG goes up, but GMV goes down.
+2. **Equal weight vs. dollar weight.** NDCG gives every query the same weight. GMV is dominated by high-value queries and high-value buyers.
+3. **Logged data only.** NDCG can score only products the old model showed. If the new model puts an unseen product at position 1, that product gets label 0, even if the user would have bought it. So offline NDCG favors models that copy the old ranking.
+4. **Position bias.** Products at the top got more clicks because they were at the top. The labels carry the old model's bias.
+5. **Orders are rare.** Most lists have no order, so NDCG is driven mostly by clicks. GMV is driven only by orders.
+6. **Effects outside the list.** GMV also depends on basket size, repeat orders, retention, and supply. One ranked list cannot show these.
+
+# 2.7 How to close the gaps
+
+| Gap | Fix |
+|---|---|
+| No price in the label | Make the order weight value-aware, for example 5 × log(1 + price). Or add a head that predicts P(order) and rank by expected revenue = P(order) × price. |
+| Equal-weight queries | Also report a revenue-weighted metric, such as NDCG weighted by query GMV, or revenue@k. |
+| Offline does not predict online | Over past A/B tests, check whether the offline lift predicted the online lift. If it did not, the offline metric is not a reliable gate. |
+| Logged data and position bias | Use position-bias correction or inverse propensity weighting (IPS). Use interleaving for faster, cleaner online reads. |
+| A model can win in a bad way | Add guardrails: relevance, conversion rate, orders per search. Monitor the share of top-k results in each relevance grade. |
+
+Wang's book makes the same points for e-commerce. The ranking goal is user satisfaction **and** revenue. Product ranking uses expected revenue = price × conversion rate. Conversion rate and GMV are the most important metrics.
+
+# 2.8 Interview frame
+
+When an interviewer asks "How do you train and evaluate a ranker?", walk down the three layers:
+
+1. **Label:** what counts as a good result, and how much? (click, cart, order, with weights)
+2. **Loss:** how does the model learn the order? (pointwise baseline → pairwise or listwise)
+3. **Offline gate:** which metric must go up before an A/B test? (NDCG@k with the same gain as the loss)
+4. **Online decision:** which business metric decides the launch? (GMV, conversion, retention, with guardrails)
+5. **Alignment:** how do you know the offline metric predicts the online metric?
+
+**30-second answer:** "I start with a label that reflects value: clicks, carts and orders, with orders weighted most. I begin with a pointwise baseline, then move to a listwise loss like LambdaRank, because it puts more weight on the top of the list. Offline, I gate on NDCG@k with the same gain as the training label. Online, GMV and conversion decide the launch, with relevance as a guardrail. I also check, across past experiments, that offline NDCG lift actually predicts online GMV lift. If it does not, I fix the label first, often by adding price."
+
+# Sources (Chapter 2)
+
+- Shusen Wang, Search Engine Technology (《搜索引擎技术》) — ch. 3.4 ranking tasks, ch. 4 offline metrics (PNR, DCG, NDCG, the IDCG trap), ch. 19–20 fusion-model targets and pointwise/pairwise/listwise training, ch. 1 and 14 e-commerce objectives (GMV, price × conversion rate).
+- Chris Burges, [From RankNet to LambdaRank to LambdaMART: An Overview](https://www.microsoft.com/en-us/research/publication/from-ranknet-to-lambdarank-to-lambdamart-an-overview/), Microsoft Research, 2010 — RankNet loss and the |ΔNDCG| weighting.

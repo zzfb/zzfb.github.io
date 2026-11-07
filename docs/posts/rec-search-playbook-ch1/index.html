@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.42">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Zhong Zhang">
+<meta name="dcterms.date" content="2026-11-06">
+<meta name="description" content="DAU, retention (exact-day, window, rolling), LT7/LT30, tier-2 metrics, A/B launch rules, and how to answer “how do you measure success?”">
+
+<title>Recommendation &amp; Search Playbook, Chapter 1: Business Metrics – Zhong’s ML Notes</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-98bc5e15ca00986a511e66da801f1277.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Zhong’s ML Notes</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/zhong-zhang-59b63a23/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Recommendation &amp; Search Playbook, Chapter 1: Business Metrics</h1>
+                  <div>
+        <div class="description">
+          DAU, retention (exact-day, window, rolling), LT7/LT30, tier-2 metrics, A/B launch rules, and how to answer “how do you measure success?”
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">Recsys</div>
+                <div class="quarto-category">Metrics</div>
+                <div class="quarto-category">Playbook</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Zhong Zhang </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 6, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-metric-hierarchy" id="toc-the-metric-hierarchy" class="nav-link active" data-scroll-target="#the-metric-hierarchy">1.1 The metric hierarchy</a></li>
+  <li><a href="#dau-and-mau" id="toc-dau-and-mau" class="nav-link" data-scroll-target="#dau-and-mau">1.2 DAU and MAU</a></li>
+  <li><a href="#retention-d1-d7-d28" id="toc-retention-d1-d7-d28" class="nav-link" data-scroll-target="#retention-d1-d7-d28">1.3 Retention (D1 / D7 / D28)</a></li>
+  <li><a href="#lt7-lt30" id="toc-lt7-lt30" class="nav-link" data-scroll-target="#lt7-lt30">1.4 LT7 / LT30</a></li>
+  <li><a href="#duration-impressions-and-clicks" id="toc-duration-impressions-and-clicks" class="nav-link" data-scroll-target="#duration-impressions-and-clicks">1.5 Duration, impressions and clicks</a></li>
+  <li><a href="#reading-metrics-together-ab-launch-rules" id="toc-reading-metrics-together-ab-launch-rules" class="nav-link" data-scroll-target="#reading-metrics-together-ab-launch-rules">1.6 Reading metrics together: A/B launch rules</a></li>
+  <li><a href="#examples-by-product-type" id="toc-examples-by-product-type" class="nav-link" data-scroll-target="#examples-by-product-type">1.7 Examples by product type</a></li>
+  <li><a href="#interview-frame" id="toc-interview-frame" class="nav-link" data-scroll-target="#interview-frame">1.8 Interview frame</a></li>
+  <li><a href="#sources" id="toc-sources" class="nav-link" data-scroll-target="#sources">Sources</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p><em>Part of my <strong>Recommendation &amp; Search Playbook</strong>: a working playbook for recommendation and search systems — what to measure, how to build, and how to explain it in interviews. All numbers in examples are illustrative unless a source is named.</em></p>
+<p>A model change is good only if it moves the business. This chapter defines the core metrics, shows how to compute them on concrete examples, and explains how to read them together.</p>
+<section id="the-metric-hierarchy" class="level1">
+<h1>1.1 The metric hierarchy</h1>
+<p>Not all metrics are equal. When metrics disagree in an A/B test, the higher tier wins.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tier</th>
+<th>Metrics</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1. Traffic and retention</td>
+<td>DAU, MAU, retention (D1/D7/D28), LT7/LT30; GMV in e-commerce</td>
+<td>Decide the launch</td>
+</tr>
+<tr class="even">
+<td>2. Engagement volume</td>
+<td>Time spent (duration), impressions, clicks</td>
+<td>Strongly linked to retention and ad revenue, but secondary</td>
+</tr>
+<tr class="odd">
+<td>3. Monitored rates</td>
+<td>CTR, engagement rate, dislike rate</td>
+<td>Watched; block a launch only if they drop a lot</td>
+</tr>
+</tbody>
+</table>
+<p>Rule of thumb: <strong>for a new product or new users, retention comes first.</strong> New users churn easily, so the first question is always: do they come back?</p>
+</section>
+<section id="dau-and-mau" class="level1">
+<h1>1.2 DAU and MAU</h1>
+<p><strong>Definition.</strong> DAU (daily active users) is the number of distinct users who are active on a given day. MAU is the same over the last 30 days. “Active” must be defined first: opened the app, viewed the feed, or engaged with an item.</p>
+<p><strong>Example — a new social feed.</strong> Define active as “viewed at least one feed item that day”.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Day</th>
+<th>Feed DAU</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mon</td>
+<td>2.0M</td>
+</tr>
+<tr class="even">
+<td>Tue</td>
+<td>2.1M</td>
+</tr>
+<tr class="odd">
+<td>Wed</td>
+<td>2.1M</td>
+</tr>
+<tr class="even">
+<td>Sat</td>
+<td>1.4M</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Over the last 30 days, 6.0M distinct users viewed the feed, so <strong>MAU = 6.0M</strong>.</li>
+<li><strong>Stickiness = DAU / MAU</strong> = 2.0M / 6.0M ≈ 33%. On average, a monthly user comes about 10 days a month.</li>
+</ul>
+<p><strong>Pitfalls</strong></p>
+<ul>
+<li><strong>Definition drift.</strong> “Opened the app” and “viewed the feed” give very different numbers. Fix the definition before the experiment.</li>
+<li><strong>Weekly cycles.</strong> A trading app may be busier on market days than on weekends. Compare Monday with Monday, not Monday with Saturday.</li>
+<li><strong>Notifications can inflate DAU</strong> without real value. Watch retention next to it.</li>
+</ul>
+</section>
+<section id="retention-d1-d7-d28" class="level1">
+<h1>1.3 Retention (D1 / D7 / D28)</h1>
+<p><strong>Definition.</strong> Take a cohort, usually users who were new on day 0. D7 retention is the percentage of that cohort who are active on day 7. D1 and D28 work the same way. Each user counts as yes or no.</p>
+<p><strong>Example — new feed users who joined on Nov 2.</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Day</th>
+<th>Users still active</th>
+<th>Retention</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Day 0</td>
+<td>10,000</td>
+<td>100%</td>
+</tr>
+<tr class="even">
+<td>D1</td>
+<td>4,500</td>
+<td>45%</td>
+</tr>
+<tr class="odd">
+<td>D7</td>
+<td>3,000</td>
+<td>30%</td>
+</tr>
+<tr class="even">
+<td>D28</td>
+<td>2,000</td>
+<td>20%</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>The curve drops fast, then flattens. The flat part shows the users who formed a habit. A good onboarding change lifts the curve <strong>and</strong> makes it flatten earlier.</li>
+<li><strong>A/B example.</strong> Control D7 = 30.0%, treatment D7 = 31.5%. That is +1.5 points, or +5% relative, which is a large win for a retention metric.</li>
+</ul>
+<p><strong>Window (bracketed) retention.</strong> User behavior fluctuates. Someone may skip Day 7 but open the app on Day 6 and Day 8. So many platforms count a return anywhere inside a time window, not on one exact day.</p>
+<blockquote class="blockquote">
+<p><strong>Window retention</strong> = (users in the cohort who were active <strong>at least once</strong> during the window) ÷ (all users in the cohort) × 100%</p>
+</blockquote>
+<ul>
+<li><strong>7-day window retention:</strong> did the user return at least once between Day 1 and Day 7?</li>
+<li><strong>30-day window retention:</strong> did the user return at least once between Day 1 and Day 30?</li>
+</ul>
+<p><strong>Example.</strong> Of the 10,000 users who joined on Nov 2, 3,000 were active on exactly Day 7 (D7 = 30%), but 5,200 came back at least once in Days 1–7. So 7-day window retention = 52%. Window retention is always at least as high as exact-day retention, and it is less noisy.</p>
+<p><strong>Three variants — say which one you mean.</strong> The names differ between companies, so state the definition in one sentence first.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variant</th>
+<th>User counts as retained if…</th>
+<th>Typical use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Exact day (classic D7)</td>
+<td>Active on Day 7 itself</td>
+<td>Simple dashboards; sensitive to day-of-week</td>
+</tr>
+<tr class="even">
+<td>Window / bracketed</td>
+<td>Active at least once in a window (Days 1–7, or Days 7–13)</td>
+<td>A/B tests; smooths daily noise</td>
+</tr>
+<tr class="odd">
+<td>Rolling (unbounded)</td>
+<td>Active on Day 7 <strong>or any later day</strong></td>
+<td>Shows who has not churned yet; keeps rising as time passes</td>
+</tr>
+</tbody>
+</table>
+<p>Some teams call window retention “rolling”. In this playbook, “rolling” means the unbounded version in the last row. The example numbers above are illustrative.</p>
+</section>
+<section id="lt7-lt30" class="level1">
+<h1>1.4 LT7 / LT30</h1>
+<p><strong>Definition.</strong> Take every user active on day T. For each user, count the distinct active days from day T to T+6, then average over all of them. The range is 1 to 7, because day T itself counts. LT30 uses 30 days. (Definition from Wang, 2023, cited below.)</p>
+<p>LT7 measures <strong>frequency</strong>, or habit strength. D7 measures <strong>survival</strong>.</p>
+<p><strong>Example — four users active on Monday.</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>User</th>
+<th>Active days in the next 7 days</th>
+<th>LT7</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A (heavy)</td>
+<td>Every day</td>
+<td>7</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>Mon, Tue, Thu, Sat</td>
+<td>4</td>
+</tr>
+<tr class="odd">
+<td>C (light)</td>
+<td>Mon only</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>D (light)</td>
+<td>Mon, Fri</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td><strong>Average</strong></td>
+<td></td>
+<td><strong>3.5</strong></td>
+</tr>
+</tbody>
+</table>
+<p>DAU on Monday = 4, LT7 = 3.5.</p>
+<p><strong>The LT7 trap — why you always pair it with DAU.</strong> Suppose a change makes the light users C and D stop coming. Now only A and B are active on Monday:</p>
+<ul>
+<li>DAU = 2 (down 50%)</li>
+<li>LT7 = (7 + 4) / 2 = 5.5 (up 57%)</li>
+</ul>
+<p>LT7 looks great, but the product lost half its users. The average went up only because the light users left the denominator. <strong>LT7 up with DAU down is a warning, not a win.</strong></p>
+<p><strong>The three definitions at a glance</strong></p>
+<ul>
+<li><strong>Exact-day D7</strong> is simple but noisy, and also blind to frequency.</li>
+<li><strong>Window retention</strong> is smoother, but blind to frequency.</li>
+<li><strong>LT7</strong> is smooth and frequency-aware, but you must read it together with DAU.</li>
+</ul>
+<p><strong>When to use which</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Situation</th>
+<th>Main metric</th>
+<th>Secondary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Onboarding / new users</strong></td>
+<td>D1, D7, D28 or window retention of the signup cohort</td>
+<td>Active days in the first week, looking at the spread, not only the average</td>
+</tr>
+<tr class="even">
+<td><strong>Mature platform</strong></td>
+<td>LT7 / LT30 together with DAU</td>
+<td>Duration, impressions, clicks</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why retention, not LT7, for onboarding</strong></p>
+<ul>
+<li><strong>An average hides churn.</strong> Take two products with 100 new users each. In X, 80 users are active only on the signup day and 20 are active every day: LT7 = (80×1 + 20×7) ÷ 100 = 2.2, but only 20% came back. In Y, all 100 users are active about 2 days: LT7 is also 2.2, but 100% came back. Same LT7, very different products. Window retention shows the difference.</li>
+<li><strong>Standard LT7 mixes new and old users.</strong> It averages over everyone active on day T, so an onboarding change barely moves it. If you use it for new users, compute it on the signup cohort: active days in the first 7 days after signup. A fixed cohort also removes the denominator trap, because users who leave still count as zeros.</li>
+<li><strong>The first week is full of novelty.</strong> New users explore a lot, then drop off. D28 or Week-2 window retention shows whether the habit lasted.</li>
+</ul>
+<p><strong>Why LT7 for a mature platform</strong></p>
+<ul>
+<li>Most traffic comes from existing users, so the question shifts from “do they stay?” to “how often do they come?”</li>
+<li>LT7 is smoother and more sensitive than D7, which helps detect the small effect of a single launch.</li>
+<li>Read it together with DAU to avoid the denominator trap.</li>
+</ul>
+</section>
+<section id="duration-impressions-and-clicks" class="level1">
+<h1>1.5 Duration, impressions and clicks</h1>
+<p>These are tier 2 metrics. They matter for every recommender, but they rank below traffic and retention (Wang, 2023).</p>
+<p><strong>Duration (time spent per active user)</strong></p>
+<p><span class="math display">\[
+\text{Duration} = \frac{\text{total minutes spent in the app}}{\text{number of active users}}
+\]</span></p>
+<ul>
+<li><strong>Example.</strong> 2.0M daily active users spend 50M minutes in total on one day. Duration = 50M ÷ 2.0M = <strong>25 minutes per user</strong>.</li>
+<li><strong>Why it matters.</strong> Duration is strongly linked to retention: users who spend more time tend to come back. So it is a useful secondary signal.</li>
+<li><strong>Why it is not the goal.</strong> It can grow for the wrong reasons, such as endless scrolling. Treat it as a guardrail or a tie-breaker, not as the north star.</li>
+</ul>
+<p><strong>Impressions and clicks per user</strong></p>
+<p><span class="math display">\[
+\text{Impressions per user} = \frac{\text{total items shown}}{\text{number of active users}}
+\]</span></p>
+<p>Clicks per user works the same way, with clicked items on top.</p>
+<ul>
+<li><strong>Example.</strong> The feed shows 120M items to 2.0M users in a day. Impressions per user = <strong>60</strong>. If users click 6M of them, clicks per user = <strong>3</strong>.</li>
+<li><strong>Why it matters.</strong> In ad-funded products, the number of impressions (or clicks) largely sets the ad revenue per user.</li>
+</ul>
+<p><strong>How to use tier 2 metrics</strong></p>
+<ul>
+<li>When tier 1 metrics are neutral, tier 2 metrics help decide the launch.</li>
+<li>When tier 1 metrics move, tier 2 metrics explain why, and they act as guardrails.</li>
+</ul>
+</section>
+<section id="reading-metrics-together-ab-launch-rules" class="level1">
+<h1>1.6 Reading metrics together: A/B launch rules</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Result</th>
+<th>Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>LT7 up, DAU up or neutral</td>
+<td>Launch. Small drops in tier 2 and 3 metrics are acceptable.</td>
+</tr>
+<tr class="even">
+<td>LT7 and DAU both neutral</td>
+<td>Case by case. Use tier 2 metrics and product judgment.</td>
+</tr>
+<tr class="odd">
+<td>LT7 up, DAU down</td>
+<td>Do not launch yet. Check who left — likely light or new users.</td>
+</tr>
+<tr class="even">
+<td>Clicks or time spent up, retention down</td>
+<td>Do not launch. The model found short-term engagement that users do not value.</td>
+</tr>
+<tr class="odd">
+<td>Retention up, clicks slightly down</td>
+<td>Usually launch. Retention is the higher tier.</td>
+</tr>
+</tbody>
+</table>
+<p>The first two rules follow the practice described in Wang (2023); the others apply the same hierarchy.</p>
+</section>
+<section id="examples-by-product-type" class="level1">
+<h1>1.7 Examples by product type</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Product</th>
+<th>North star (tier 1)</th>
+<th>Leading signal</th>
+<th>Guardrails</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>New social feed</td>
+<td>Feed DAU, D7/D28 retention of new feed users</td>
+<td>First-week follows, saves, comments</td>
+<td>Time spent, hides/reports, content quality</td>
+</tr>
+<tr class="even">
+<td>Music streaming home</td>
+<td>DAU, weekly active users, retention</td>
+<td>Streams per session, saves, new artists played</td>
+<td>Skips, dislikes, latency</td>
+</tr>
+<tr class="odd">
+<td>E-commerce search</td>
+<td>GMV, buyer retention</td>
+<td>Add-to-cart, order rate per search</td>
+<td>Zero-result rate, relevance, latency</td>
+</tr>
+<tr class="even">
+<td>Finance app feed</td>
+<td>DAU, retention</td>
+<td>Engagement with content about owned or watched assets</td>
+<td>Trust and quality signals, complaints, compliance review</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="interview-frame" class="level1">
+<h1>1.8 Interview frame</h1>
+<p>Use the same three layers for every “how do you measure success?” question:</p>
+<ol type="1">
+<li><strong>North star:</strong> do users come back? (DAU + retention)</li>
+<li><strong>Leading signal:</strong> what moves fast and predicts the north star? (activation, follows, saves)</li>
+<li><strong>Guardrails:</strong> how could we win in a bad way? (time spent, quality, trust, latency)</li>
+</ol>
+<p><strong>30-second answer for “How do you measure a new feed?”:</strong> “For a new product, retention comes first: D7 and D28 retention of new feed users, read together with feed DAU. Retention moves slowly, so I’d use first-week activation — follows, saves, comments — as the fast signal for A/B tests. Time spent is a guardrail, not a goal, because it can grow for the wrong reasons.”</p>
+</section>
+<section id="sources" class="level1">
+<h1>Sources</h1>
+<ul>
+<li>Shusen Wang, <a href="https://arxiv.org/abs/2308.01204">Methodologies for Improving Modern Industrial Recommender Systems</a>, arXiv:2308.01204, 2023 — metric hierarchy, LT7 definition, the LT7/DAU interaction, retention as the main goal for new users.</li>
+</ul>
+
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/zzfb\.github\.io");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

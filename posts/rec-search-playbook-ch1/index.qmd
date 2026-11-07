@@ -1,0 +1,201 @@
+---
+title: "Recommendation & Search Playbook, Chapter 1: Business Metrics"
+author: "Zhong Zhang"
+date: "2026-11-06"
+categories: [Recsys, Metrics, Playbook]
+description: "DAU, retention (exact-day, window, rolling), LT7/LT30, tier-2 metrics, A/B launch rules, and how to answer \"how do you measure success?\""
+format:
+  html:
+    toc: true
+    toc-location: left
+    number-sections: false
+    html-math-method: mathjax
+---
+
+*Part of my **Recommendation & Search Playbook**: a working playbook for recommendation and search systems — what to measure, how to build, and how to explain it in interviews. All numbers in examples are illustrative unless a source is named.*
+
+A model change is good only if it moves the business. This chapter defines the core metrics, shows how to compute them on concrete examples, and explains how to read them together.
+
+# 1.1 The metric hierarchy
+
+Not all metrics are equal. When metrics disagree in an A/B test, the higher tier wins.
+
+| Tier | Metrics | Role |
+|---|---|---|
+| 1. Traffic and retention | DAU, MAU, retention (D1/D7/D28), LT7/LT30; GMV in e-commerce | Decide the launch |
+| 2. Engagement volume | Time spent (duration), impressions, clicks | Strongly linked to retention and ad revenue, but secondary |
+| 3. Monitored rates | CTR, engagement rate, dislike rate | Watched; block a launch only if they drop a lot |
+
+Rule of thumb: **for a new product or new users, retention comes first.** New users churn easily, so the first question is always: do they come back?
+
+# 1.2 DAU and MAU
+
+**Definition.** DAU (daily active users) is the number of distinct users who are active on a given day. MAU is the same over the last 30 days. "Active" must be defined first: opened the app, viewed the feed, or engaged with an item.
+
+**Example — a new social feed.** Define active as "viewed at least one feed item that day".
+
+| Day | Feed DAU |
+|---|---|
+| Mon | 2.0M |
+| Tue | 2.1M |
+| Wed | 2.1M |
+| Sat | 1.4M |
+
+- Over the last 30 days, 6.0M distinct users viewed the feed, so **MAU = 6.0M**.
+- **Stickiness = DAU / MAU** = 2.0M / 6.0M ≈ 33%. On average, a monthly user comes about 10 days a month.
+
+**Pitfalls**
+
+- **Definition drift.** "Opened the app" and "viewed the feed" give very different numbers. Fix the definition before the experiment.
+- **Weekly cycles.** A trading app may be busier on market days than on weekends. Compare Monday with Monday, not Monday with Saturday.
+- **Notifications can inflate DAU** without real value. Watch retention next to it.
+
+# 1.3 Retention (D1 / D7 / D28)
+
+**Definition.** Take a cohort, usually users who were new on day 0. D7 retention is the percentage of that cohort who are active on day 7. D1 and D28 work the same way. Each user counts as yes or no.
+
+**Example — new feed users who joined on Nov 2.**
+
+| Day | Users still active | Retention |
+|---|---|---|
+| Day 0 | 10,000 | 100% |
+| D1 | 4,500 | 45% |
+| D7 | 3,000 | 30% |
+| D28 | 2,000 | 20% |
+
+- The curve drops fast, then flattens. The flat part shows the users who formed a habit. A good onboarding change lifts the curve **and** makes it flatten earlier.
+- **A/B example.** Control D7 = 30.0%, treatment D7 = 31.5%. That is +1.5 points, or +5% relative, which is a large win for a retention metric.
+
+**Window (bracketed) retention.** User behavior fluctuates. Someone may skip Day 7 but open the app on Day 6 and Day 8. So many platforms count a return anywhere inside a time window, not on one exact day.
+
+> **Window retention** = (users in the cohort who were active **at least once** during the window) ÷ (all users in the cohort) × 100%
+
+- **7-day window retention:** did the user return at least once between Day 1 and Day 7?
+- **30-day window retention:** did the user return at least once between Day 1 and Day 30?
+
+**Example.** Of the 10,000 users who joined on Nov 2, 3,000 were active on exactly Day 7 (D7 = 30%), but 5,200 came back at least once in Days 1–7. So 7-day window retention = 52%. Window retention is always at least as high as exact-day retention, and it is less noisy.
+
+**Three variants — say which one you mean.** The names differ between companies, so state the definition in one sentence first.
+
+| Variant | User counts as retained if… | Typical use |
+|---|---|---|
+| Exact day (classic D7) | Active on Day 7 itself | Simple dashboards; sensitive to day-of-week |
+| Window / bracketed | Active at least once in a window (Days 1–7, or Days 7–13) | A/B tests; smooths daily noise |
+| Rolling (unbounded) | Active on Day 7 **or any later day** | Shows who has not churned yet; keeps rising as time passes |
+
+Some teams call window retention "rolling". In this playbook, "rolling" means the unbounded version in the last row. The example numbers above are illustrative.
+
+# 1.4 LT7 / LT30
+
+**Definition.** Take every user active on day T. For each user, count the distinct active days from day T to T+6, then average over all of them. The range is 1 to 7, because day T itself counts. LT30 uses 30 days. (Definition from Wang, 2023, cited below.)
+
+LT7 measures **frequency**, or habit strength. D7 measures **survival**.
+
+**Example — four users active on Monday.**
+
+| User | Active days in the next 7 days | LT7 |
+|---|---|---|
+| A (heavy) | Every day | 7 |
+| B | Mon, Tue, Thu, Sat | 4 |
+| C (light) | Mon only | 1 |
+| D (light) | Mon, Fri | 2 |
+| **Average** |  | **3.5** |
+
+DAU on Monday = 4, LT7 = 3.5.
+
+**The LT7 trap — why you always pair it with DAU.** Suppose a change makes the light users C and D stop coming. Now only A and B are active on Monday:
+
+- DAU = 2 (down 50%)
+- LT7 = (7 + 4) / 2 = 5.5 (up 57%)
+
+LT7 looks great, but the product lost half its users. The average went up only because the light users left the denominator. **LT7 up with DAU down is a warning, not a win.**
+
+**The three definitions at a glance**
+
+- **Exact-day D7** is simple but noisy, and also blind to frequency.
+- **Window retention** is smoother, but blind to frequency.
+- **LT7** is smooth and frequency-aware, but you must read it together with DAU.
+
+**When to use which**
+
+| Situation | Main metric | Secondary |
+|---|---|---|
+| **Onboarding / new users** | D1, D7, D28 or window retention of the signup cohort | Active days in the first week, looking at the spread, not only the average |
+| **Mature platform** | LT7 / LT30 together with DAU | Duration, impressions, clicks |
+
+**Why retention, not LT7, for onboarding**
+
+- **An average hides churn.** Take two products with 100 new users each. In X, 80 users are active only on the signup day and 20 are active every day: LT7 = (80×1 + 20×7) ÷ 100 = 2.2, but only 20% came back. In Y, all 100 users are active about 2 days: LT7 is also 2.2, but 100% came back. Same LT7, very different products. Window retention shows the difference.
+- **Standard LT7 mixes new and old users.** It averages over everyone active on day T, so an onboarding change barely moves it. If you use it for new users, compute it on the signup cohort: active days in the first 7 days after signup. A fixed cohort also removes the denominator trap, because users who leave still count as zeros.
+- **The first week is full of novelty.** New users explore a lot, then drop off. D28 or Week-2 window retention shows whether the habit lasted.
+
+**Why LT7 for a mature platform**
+
+- Most traffic comes from existing users, so the question shifts from "do they stay?" to "how often do they come?"
+- LT7 is smoother and more sensitive than D7, which helps detect the small effect of a single launch.
+- Read it together with DAU to avoid the denominator trap.
+
+# 1.5 Duration, impressions and clicks
+
+These are tier 2 metrics. They matter for every recommender, but they rank below traffic and retention (Wang, 2023).
+
+**Duration (time spent per active user)**
+
+$$
+\text{Duration} = \frac{\text{total minutes spent in the app}}{\text{number of active users}}
+$$
+
+- **Example.** 2.0M daily active users spend 50M minutes in total on one day. Duration = 50M ÷ 2.0M = **25 minutes per user**.
+- **Why it matters.** Duration is strongly linked to retention: users who spend more time tend to come back. So it is a useful secondary signal.
+- **Why it is not the goal.** It can grow for the wrong reasons, such as endless scrolling. Treat it as a guardrail or a tie-breaker, not as the north star.
+
+**Impressions and clicks per user**
+
+$$
+\text{Impressions per user} = \frac{\text{total items shown}}{\text{number of active users}}
+$$
+
+Clicks per user works the same way, with clicked items on top.
+
+- **Example.** The feed shows 120M items to 2.0M users in a day. Impressions per user = **60**. If users click 6M of them, clicks per user = **3**.
+- **Why it matters.** In ad-funded products, the number of impressions (or clicks) largely sets the ad revenue per user.
+
+**How to use tier 2 metrics**
+
+- When tier 1 metrics are neutral, tier 2 metrics help decide the launch.
+- When tier 1 metrics move, tier 2 metrics explain why, and they act as guardrails.
+
+# 1.6 Reading metrics together: A/B launch rules
+
+| Result | Decision |
+|---|---|
+| LT7 up, DAU up or neutral | Launch. Small drops in tier 2 and 3 metrics are acceptable. |
+| LT7 and DAU both neutral | Case by case. Use tier 2 metrics and product judgment. |
+| LT7 up, DAU down | Do not launch yet. Check who left — likely light or new users. |
+| Clicks or time spent up, retention down | Do not launch. The model found short-term engagement that users do not value. |
+| Retention up, clicks slightly down | Usually launch. Retention is the higher tier. |
+
+The first two rules follow the practice described in Wang (2023); the others apply the same hierarchy.
+
+# 1.7 Examples by product type
+
+| Product | North star (tier 1) | Leading signal | Guardrails |
+|---|---|---|---|
+| New social feed | Feed DAU, D7/D28 retention of new feed users | First-week follows, saves, comments | Time spent, hides/reports, content quality |
+| Music streaming home | DAU, weekly active users, retention | Streams per session, saves, new artists played | Skips, dislikes, latency |
+| E-commerce search | GMV, buyer retention | Add-to-cart, order rate per search | Zero-result rate, relevance, latency |
+| Finance app feed | DAU, retention | Engagement with content about owned or watched assets | Trust and quality signals, complaints, compliance review |
+
+# 1.8 Interview frame
+
+Use the same three layers for every "how do you measure success?" question:
+
+1. **North star:** do users come back? (DAU + retention)
+2. **Leading signal:** what moves fast and predicts the north star? (activation, follows, saves)
+3. **Guardrails:** how could we win in a bad way? (time spent, quality, trust, latency)
+
+**30-second answer for "How do you measure a new feed?":** "For a new product, retention comes first: D7 and D28 retention of new feed users, read together with feed DAU. Retention moves slowly, so I'd use first-week activation — follows, saves, comments — as the fast signal for A/B tests. Time spent is a guardrail, not a goal, because it can grow for the wrong reasons."
+
+# Sources
+
+- Shusen Wang, [Methodologies for Improving Modern Industrial Recommender Systems](https://arxiv.org/abs/2308.01204), arXiv:2308.01204, 2023 — metric hierarchy, LT7 definition, the LT7/DAU interaction, retention as the main goal for new users.
