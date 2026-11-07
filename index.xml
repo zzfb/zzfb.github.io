@@ -9,8 +9,755 @@
 <link>https://zzfb.github.io/</link>
 <atom:link href="https://zzfb.github.io/index.xml" rel="self" type="application/rss+xml"/>
 <description>Machine learning articles, notebooks, and papers</description>
-<generator>quarto-1.8.24</generator>
-<lastBuildDate>Wed, 01 Oct 2025 04:00:00 GMT</lastBuildDate>
+<generator>quarto-1.6.42</generator>
+<lastBuildDate>Fri, 06 Nov 2026 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Recommendation &amp; Search Playbook, Chapter 1: Business Metrics</title>
+  <dc:creator>Zhong Zhang</dc:creator>
+  <link>https://zzfb.github.io/posts/rec-search-playbook-ch1/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p><em>Part of my <strong>Recommendation &amp; Search Playbook</strong>: a working playbook for recommendation and search systems — what to measure, how to build, and how to explain it in interviews. All numbers in examples are illustrative unless a source is named.</em></p>
+<p>A model change is good only if it moves the business. This chapter defines the core metrics, shows how to compute them on concrete examples, and explains how to read them together.</p>
+<section id="the-metric-hierarchy" class="level1">
+<h1>1.1 The metric hierarchy</h1>
+<p>Not all metrics are equal. When metrics disagree in an A/B test, the higher tier wins.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tier</th>
+<th>Metrics</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1. Traffic and retention</td>
+<td>DAU, MAU, retention (D1/D7/D28), LT7/LT30; GMV in e-commerce</td>
+<td>Decide the launch</td>
+</tr>
+<tr class="even">
+<td>2. Engagement volume</td>
+<td>Time spent (duration), impressions, clicks</td>
+<td>Strongly linked to retention and ad revenue, but secondary</td>
+</tr>
+<tr class="odd">
+<td>3. Monitored rates</td>
+<td>CTR, engagement rate, dislike rate</td>
+<td>Watched; block a launch only if they drop a lot</td>
+</tr>
+</tbody>
+</table>
+<p>Rule of thumb: <strong>for a new product or new users, retention comes first.</strong> New users churn easily, so the first question is always: do they come back?</p>
+</section>
+<section id="dau-and-mau" class="level1">
+<h1>1.2 DAU and MAU</h1>
+<p><strong>Definition.</strong> DAU (daily active users) is the number of distinct users who are active on a given day. MAU is the same over the last 30 days. “Active” must be defined first: opened the app, viewed the feed, or engaged with an item.</p>
+<p><strong>Example — a new social feed.</strong> Define active as “viewed at least one feed item that day”.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Day</th>
+<th>Feed DAU</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mon</td>
+<td>2.0M</td>
+</tr>
+<tr class="even">
+<td>Tue</td>
+<td>2.1M</td>
+</tr>
+<tr class="odd">
+<td>Wed</td>
+<td>2.1M</td>
+</tr>
+<tr class="even">
+<td>Sat</td>
+<td>1.4M</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Over the last 30 days, 6.0M distinct users viewed the feed, so <strong>MAU = 6.0M</strong>.</li>
+<li><strong>Stickiness = DAU / MAU</strong> = 2.0M / 6.0M ≈ 33%. On average, a monthly user comes about 10 days a month.</li>
+</ul>
+<p><strong>Pitfalls</strong></p>
+<ul>
+<li><strong>Definition drift.</strong> “Opened the app” and “viewed the feed” give very different numbers. Fix the definition before the experiment.</li>
+<li><strong>Weekly cycles.</strong> A trading app may be busier on market days than on weekends. Compare Monday with Monday, not Monday with Saturday.</li>
+<li><strong>Notifications can inflate DAU</strong> without real value. Watch retention next to it.</li>
+</ul>
+</section>
+<section id="retention-d1-d7-d28" class="level1">
+<h1>1.3 Retention (D1 / D7 / D28)</h1>
+<p><strong>Definition.</strong> Take a cohort, usually users who were new on day 0. D7 retention is the percentage of that cohort who are active on day 7. D1 and D28 work the same way. Each user counts as yes or no.</p>
+<p><strong>Example — new feed users who joined on Nov 2.</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Day</th>
+<th>Users still active</th>
+<th>Retention</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Day 0</td>
+<td>10,000</td>
+<td>100%</td>
+</tr>
+<tr class="even">
+<td>D1</td>
+<td>4,500</td>
+<td>45%</td>
+</tr>
+<tr class="odd">
+<td>D7</td>
+<td>3,000</td>
+<td>30%</td>
+</tr>
+<tr class="even">
+<td>D28</td>
+<td>2,000</td>
+<td>20%</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>The curve drops fast, then flattens. The flat part shows the users who formed a habit. A good onboarding change lifts the curve <strong>and</strong> makes it flatten earlier.</li>
+<li><strong>A/B example.</strong> Control D7 = 30.0%, treatment D7 = 31.5%. That is +1.5 points, or +5% relative, which is a large win for a retention metric.</li>
+</ul>
+<p><strong>Window (bracketed) retention.</strong> User behavior fluctuates. Someone may skip Day 7 but open the app on Day 6 and Day 8. So many platforms count a return anywhere inside a time window, not on one exact day.</p>
+<blockquote class="blockquote">
+<p><strong>Window retention</strong> = (users in the cohort who were active <strong>at least once</strong> during the window) ÷ (all users in the cohort) × 100%</p>
+</blockquote>
+<ul>
+<li><strong>7-day window retention:</strong> did the user return at least once between Day 1 and Day 7?</li>
+<li><strong>30-day window retention:</strong> did the user return at least once between Day 1 and Day 30?</li>
+</ul>
+<p><strong>Example.</strong> Of the 10,000 users who joined on Nov 2, 3,000 were active on exactly Day 7 (D7 = 30%), but 5,200 came back at least once in Days 1–7. So 7-day window retention = 52%. Window retention is always at least as high as exact-day retention, and it is less noisy.</p>
+<p><strong>Three variants — say which one you mean.</strong> The names differ between companies, so state the definition in one sentence first.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variant</th>
+<th>User counts as retained if…</th>
+<th>Typical use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Exact day (classic D7)</td>
+<td>Active on Day 7 itself</td>
+<td>Simple dashboards; sensitive to day-of-week</td>
+</tr>
+<tr class="even">
+<td>Window / bracketed</td>
+<td>Active at least once in a window (Days 1–7, or Days 7–13)</td>
+<td>A/B tests; smooths daily noise</td>
+</tr>
+<tr class="odd">
+<td>Rolling (unbounded)</td>
+<td>Active on Day 7 <strong>or any later day</strong></td>
+<td>Shows who has not churned yet; keeps rising as time passes</td>
+</tr>
+</tbody>
+</table>
+<p>Some teams call window retention “rolling”. In this playbook, “rolling” means the unbounded version in the last row. The example numbers above are illustrative.</p>
+</section>
+<section id="lt7-lt30" class="level1">
+<h1>1.4 LT7 / LT30</h1>
+<p><strong>Definition.</strong> Take every user active on day T. For each user, count the distinct active days from day T to T+6, then average over all of them. The range is 1 to 7, because day T itself counts. LT30 uses 30 days. (Definition from Wang, 2023, cited below.)</p>
+<p>LT7 measures <strong>frequency</strong>, or habit strength. D7 measures <strong>survival</strong>.</p>
+<p><strong>Example — four users active on Monday.</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>User</th>
+<th>Active days in the next 7 days</th>
+<th>LT7</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A (heavy)</td>
+<td>Every day</td>
+<td>7</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>Mon, Tue, Thu, Sat</td>
+<td>4</td>
+</tr>
+<tr class="odd">
+<td>C (light)</td>
+<td>Mon only</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>D (light)</td>
+<td>Mon, Fri</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td><strong>Average</strong></td>
+<td></td>
+<td><strong>3.5</strong></td>
+</tr>
+</tbody>
+</table>
+<p>DAU on Monday = 4, LT7 = 3.5.</p>
+<p><strong>The LT7 trap — why you always pair it with DAU.</strong> Suppose a change makes the light users C and D stop coming. Now only A and B are active on Monday:</p>
+<ul>
+<li>DAU = 2 (down 50%)</li>
+<li>LT7 = (7 + 4) / 2 = 5.5 (up 57%)</li>
+</ul>
+<p>LT7 looks great, but the product lost half its users. The average went up only because the light users left the denominator. <strong>LT7 up with DAU down is a warning, not a win.</strong></p>
+<p><strong>The three definitions at a glance</strong></p>
+<ul>
+<li><strong>Exact-day D7</strong> is simple but noisy, and also blind to frequency.</li>
+<li><strong>Window retention</strong> is smoother, but blind to frequency.</li>
+<li><strong>LT7</strong> is smooth and frequency-aware, but you must read it together with DAU.</li>
+</ul>
+<p><strong>When to use which</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Situation</th>
+<th>Main metric</th>
+<th>Secondary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Onboarding / new users</strong></td>
+<td>D1, D7, D28 or window retention of the signup cohort</td>
+<td>Active days in the first week, looking at the spread, not only the average</td>
+</tr>
+<tr class="even">
+<td><strong>Mature platform</strong></td>
+<td>LT7 / LT30 together with DAU</td>
+<td>Duration, impressions, clicks</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why retention, not LT7, for onboarding</strong></p>
+<ul>
+<li><strong>An average hides churn.</strong> Take two products with 100 new users each. In X, 80 users are active only on the signup day and 20 are active every day: LT7 = (80×1 + 20×7) ÷ 100 = 2.2, but only 20% came back. In Y, all 100 users are active about 2 days: LT7 is also 2.2, but 100% came back. Same LT7, very different products. Window retention shows the difference.</li>
+<li><strong>Standard LT7 mixes new and old users.</strong> It averages over everyone active on day T, so an onboarding change barely moves it. If you use it for new users, compute it on the signup cohort: active days in the first 7 days after signup. A fixed cohort also removes the denominator trap, because users who leave still count as zeros.</li>
+<li><strong>The first week is full of novelty.</strong> New users explore a lot, then drop off. D28 or Week-2 window retention shows whether the habit lasted.</li>
+</ul>
+<p><strong>Why LT7 for a mature platform</strong></p>
+<ul>
+<li>Most traffic comes from existing users, so the question shifts from “do they stay?” to “how often do they come?”</li>
+<li>LT7 is smoother and more sensitive than D7, which helps detect the small effect of a single launch.</li>
+<li>Read it together with DAU to avoid the denominator trap.</li>
+</ul>
+</section>
+<section id="duration-impressions-and-clicks" class="level1">
+<h1>1.5 Duration, impressions and clicks</h1>
+<p>These are tier 2 metrics. They matter for every recommender, but they rank below traffic and retention (Wang, 2023).</p>
+<p><strong>Duration (time spent per active user)</strong></p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Ctext%7BDuration%7D%20=%20%5Cfrac%7B%5Ctext%7Btotal%20minutes%20spent%20in%20the%20app%7D%7D%7B%5Ctext%7Bnumber%20of%20active%20users%7D%7D%0A"></p>
+<ul>
+<li><strong>Example.</strong> 2.0M daily active users spend 50M minutes in total on one day. Duration = 50M ÷ 2.0M = <strong>25 minutes per user</strong>.</li>
+<li><strong>Why it matters.</strong> Duration is strongly linked to retention: users who spend more time tend to come back. So it is a useful secondary signal.</li>
+<li><strong>Why it is not the goal.</strong> It can grow for the wrong reasons, such as endless scrolling. Treat it as a guardrail or a tie-breaker, not as the north star.</li>
+</ul>
+<p><strong>Impressions and clicks per user</strong></p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Ctext%7BImpressions%20per%20user%7D%20=%20%5Cfrac%7B%5Ctext%7Btotal%20items%20shown%7D%7D%7B%5Ctext%7Bnumber%20of%20active%20users%7D%7D%0A"></p>
+<p>Clicks per user works the same way, with clicked items on top.</p>
+<ul>
+<li><strong>Example.</strong> The feed shows 120M items to 2.0M users in a day. Impressions per user = <strong>60</strong>. If users click 6M of them, clicks per user = <strong>3</strong>.</li>
+<li><strong>Why it matters.</strong> In ad-funded products, the number of impressions (or clicks) largely sets the ad revenue per user.</li>
+</ul>
+<p><strong>How to use tier 2 metrics</strong></p>
+<ul>
+<li>When tier 1 metrics are neutral, tier 2 metrics help decide the launch.</li>
+<li>When tier 1 metrics move, tier 2 metrics explain why, and they act as guardrails.</li>
+</ul>
+</section>
+<section id="reading-metrics-together-ab-launch-rules" class="level1">
+<h1>1.6 Reading metrics together: A/B launch rules</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Result</th>
+<th>Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>LT7 up, DAU up or neutral</td>
+<td>Launch. Small drops in tier 2 and 3 metrics are acceptable.</td>
+</tr>
+<tr class="even">
+<td>LT7 and DAU both neutral</td>
+<td>Case by case. Use tier 2 metrics and product judgment.</td>
+</tr>
+<tr class="odd">
+<td>LT7 up, DAU down</td>
+<td>Do not launch yet. Check who left — likely light or new users.</td>
+</tr>
+<tr class="even">
+<td>Clicks or time spent up, retention down</td>
+<td>Do not launch. The model found short-term engagement that users do not value.</td>
+</tr>
+<tr class="odd">
+<td>Retention up, clicks slightly down</td>
+<td>Usually launch. Retention is the higher tier.</td>
+</tr>
+</tbody>
+</table>
+<p>The first two rules follow the practice described in Wang (2023); the others apply the same hierarchy.</p>
+</section>
+<section id="examples-by-product-type" class="level1">
+<h1>1.7 Examples by product type</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Product</th>
+<th>North star (tier 1)</th>
+<th>Leading signal</th>
+<th>Guardrails</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>New social feed</td>
+<td>Feed DAU, D7/D28 retention of new feed users</td>
+<td>First-week follows, saves, comments</td>
+<td>Time spent, hides/reports, content quality</td>
+</tr>
+<tr class="even">
+<td>Music streaming home</td>
+<td>DAU, weekly active users, retention</td>
+<td>Streams per session, saves, new artists played</td>
+<td>Skips, dislikes, latency</td>
+</tr>
+<tr class="odd">
+<td>E-commerce search</td>
+<td>GMV, buyer retention</td>
+<td>Add-to-cart, order rate per search</td>
+<td>Zero-result rate, relevance, latency</td>
+</tr>
+<tr class="even">
+<td>Finance app feed</td>
+<td>DAU, retention</td>
+<td>Engagement with content about owned or watched assets</td>
+<td>Trust and quality signals, complaints, compliance review</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="interview-frame" class="level1">
+<h1>1.8 Interview frame</h1>
+<p>Use the same three layers for every “how do you measure success?” question:</p>
+<ol type="1">
+<li><strong>North star:</strong> do users come back? (DAU + retention)</li>
+<li><strong>Leading signal:</strong> what moves fast and predicts the north star? (activation, follows, saves)</li>
+<li><strong>Guardrails:</strong> how could we win in a bad way? (time spent, quality, trust, latency)</li>
+</ol>
+<p><strong>30-second answer for “How do you measure a new feed?”:</strong> “For a new product, retention comes first: D7 and D28 retention of new feed users, read together with feed DAU. Retention moves slowly, so I’d use first-week activation — follows, saves, comments — as the fast signal for A/B tests. Time spent is a guardrail, not a goal, because it can grow for the wrong reasons.”</p>
+</section>
+<section id="sources" class="level1">
+<h1>Sources</h1>
+<ul>
+<li>Shusen Wang, <a href="https://arxiv.org/abs/2308.01204">Methodologies for Improving Modern Industrial Recommender Systems</a>, arXiv:2308.01204, 2023 — metric hierarchy, LT7 definition, the LT7/DAU interaction, retention as the main goal for new users.</li>
+</ul>
+
+
+
+</section>
+
+ ]]></description>
+  <category>Recsys</category>
+  <category>Metrics</category>
+  <category>Playbook</category>
+  <guid>https://zzfb.github.io/posts/rec-search-playbook-ch1/</guid>
+  <pubDate>Fri, 06 Nov 2026 05:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Recommendation &amp; Search Playbook, Chapter 2: Loss Functions and Offline Metrics</title>
+  <dc:creator>Zhong Zhang</dc:creator>
+  <link>https://zzfb.github.io/posts/rec-search-playbook-ch2/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p><em>Part of my <strong>Recommendation &amp; Search Playbook</strong>: a working playbook for recommendation and search systems — what to measure, how to build, and how to explain it in interviews. All numbers in examples are illustrative unless a source is named.</em></p>
+<p><a href="../../posts/rec-search-playbook-ch1/index.html">Chapter 1</a> covered what the business wants. This chapter covers the two layers below it: what the model optimizes (the loss) and what you measure before an A/B test (the offline metric). Most ranking problems come from the gaps between these layers.</p>
+<p>All examples use one running case: e-commerce search on a marketplace. For each query, the system returns a list of products. Users can click, add to cart, or order. The weights below are illustrative.</p>
+<section id="three-layers-of-one-goal" class="level1">
+<h1>2.1 Three layers of one goal</h1>
+<p>Each layer is a proxy for the layer above it. The loss is what the model can optimize. The offline metric is what you can measure cheaply. The online metric is what the business wants.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Loss (ML objective)</th>
+<th>Offline metric (e.g.&nbsp;NDCG@k)</th>
+<th>Online metric (e.g.&nbsp;GMV)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Question it answers</td>
+<td>Which direction should the weights move?</td>
+<td>Does the new model rank the logged items better?</td>
+<td>Did the business make more money?</td>
+</tr>
+<tr class="even">
+<td>Computed on</td>
+<td>Training logs, per query list</td>
+<td>Held-out logs, per query list</td>
+<td>Live traffic in an A/B test</td>
+</tr>
+<tr class="odd">
+<td>Differentiable?</td>
+<td>Yes, it must be</td>
+<td>No, it depends on sorting</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>Uses price?</td>
+<td>Only if price is in the label</td>
+<td>Only if price is in the gain</td>
+<td>Yes, built in</td>
+</tr>
+<tr class="odd">
+<td>Speed</td>
+<td>Every training step</td>
+<td>Minutes</td>
+<td>1–4 weeks</td>
+</tr>
+<tr class="even">
+<td>Role</td>
+<td>Training signal</td>
+<td>Gate before the A/B test</td>
+<td>Launch decision</td>
+</tr>
+</tbody>
+</table>
+<p>The book Search Engine Technology (Wang) uses the same order: offline metrics come first, and you start an A/B test only after you see an offline gain.</p>
+</section>
+<section id="the-label-is-not-the-loss" class="level1">
+<h1>2.2 The label is not the loss</h1>
+<p>A common shortcut is to call a formula like the one below a “composite loss”. It is a <strong>label</strong> (also called the target or the gain). The loss is the function that uses this label.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ay%20=%200.1%20%5Ctimes%20%5Ctext%7Bclick%7D%20+%201%20%5Ctimes%20%5Ctext%7Bcart%7D%20+%205%20%5Ctimes%20%5Ctext%7Border%7D%0A"></p>
+<p><strong>The label is cumulative.</strong> An order also has a click and a cart. So an ordered product gets 0.1 + 1 + 5 = 6.1, not 5.</p>
+<p><strong>Running example — one query, four products.</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Product</th>
+<th>User action</th>
+<th>Label y</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td>Click only</td>
+<td>0.1</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>Click + cart + order</td>
+<td>6.1</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td>No action</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>D</td>
+<td>Click + cart, no order</td>
+<td>1.1</td>
+</tr>
+</tbody>
+</table>
+<p>The ideal order is B, D, A, C.</p>
+<p>Two models rank this list:</p>
+<ul>
+<li><strong>Model 1:</strong> A, D, B, C (the ordered product is at position 3)</li>
+<li><strong>Model 2:</strong> B, D, A, C (the ideal order)</li>
+</ul>
+</section>
+<section id="loss-functions" class="level1">
+<h1>2.3 Loss functions</h1>
+<p>In ranking, the model does not need to predict y exactly. It needs to put the products <strong>in the same order</strong> as y. The three families differ in how they treat this.</p>
+<p><strong>Pointwise.</strong> Treat each (query, product) pair as an independent sample. Fit the score to y with MSE (or cross-entropy if y is scaled to [0, 1]).</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AL_%7B%5Ctext%7Bpoint%7D%7D%20=%20%5Cfrac%7B1%7D%7Bk%7D%5Csum_%7Bi=1%7D%5E%7Bk%7D%5Cbig(f(x_i)%20-%20y_i%5Cbig)%5E2%0A"></p>
+<ul>
+<li><strong>Problem:</strong> it keeps the value, not the order. If you add a constant δ to every score, the MSE gets much worse, but the ranking does not change.</li>
+<li><strong>Use:</strong> a good first baseline. It is simple, hard to get wrong, and often not much worse than the others.</li>
+</ul>
+<p><strong>Pairwise (RankNet).</strong> Look at every pair where y_i &gt; y_j. Push score p_i above score p_j.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AL_%7B%5Ctext%7Bpair%7D%7D%20=%20%5Cfrac%7B1%7D%7Bn%7D%5Csum_%7B(i,j):%5C,y_i%20%3E%20y_j%7D%5Cln%5Cbig(1%20+%20e%5E%7B-(p_i%20-%20p_j)%7D%5Cbig)%0A"></p>
+<ul>
+<li>In the running example there are 6 ordered pairs: B&gt;D, B&gt;A, B&gt;C, D&gt;A, D&gt;C, A&gt;C.</li>
+<li><strong>Strength:</strong> every pair gives a full gradient signal, even when two labels are close (for example 1.1 vs 1).</li>
+<li><strong>Two flaws:</strong> it ignores how much larger y_i is than y_j, and it ignores where the pair is in the list. A wrong pair at positions 1–2 costs the same as a wrong pair at positions 40–41.</li>
+</ul>
+<p><strong>Listwise — softmax cross-entropy.</strong> Turn the labels into target shares and the scores into a softmax. Minimize the cross-entropy between them.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AL_%7B%5Ctext%7Blist%7D%7D%20=%20-%5Csum_%7Bi=1%7D%5E%7Bk%7D%5Cfrac%7By_i%7D%7B%5Csum_j%20y_j%7D%5C,%5Cln%5Cfrac%7Be%5E%7Bp_i%7D%7D%7B%5Csum_j%20e%5E%7Bp_j%7D%7D%0A"></p>
+<ul>
+<li>Target shares in the example: B = 6.1 / 7.3 = 84%, D = 15%, A = 1.4%, C = 0%.</li>
+<li><strong>Strength:</strong> it sees the whole list, and large labels pull hard.</li>
+<li><strong>Weakness:</strong> small label differences produce small target differences. If most labels are nearly equal, the signal is weak.</li>
+</ul>
+<p><strong>Listwise — LambdaRank.</strong> Take the RankNet pair loss and multiply each pair by |ΔNDCG|, the change in NDCG if you swap the two products.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AL_%7B%5Clambda%7D%20=%20%5Cfrac%7B1%7D%7Bn%7D%5Csum_%7B(i,j):%5C,y_i%20%3E%20y_j%7D%7C%5CDelta%5Ctext%7BNDCG%7D_%7Bij%7D%7C%5Ccdot%5Cln%5Cbig(1%20+%20e%5E%7B-(p_i%20-%20p_j)%7D%5Cbig)%0A"></p>
+<ul>
+<li><strong>Example (Model 1, linear gain).</strong> Swapping B (position 3) and A (position 1) changes NDCG by 0.44. Swapping A (position 1) and C (position 4) changes NDCG by 0.008. So the B–A pair gets about 50× more weight.</li>
+<li><strong>Result:</strong> mistakes at the top of the list cost more. This fixes both RankNet flaws.</li>
+</ul>
+</section>
+<section id="offline-metrics" class="level1">
+<h1>2.4 Offline metrics</h1>
+<p>Offline metrics follow the same three families.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Family</th>
+<th>Metrics</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Pointwise</td>
+<td>MSE, precision, recall, F1, AUC</td>
+<td>Is each score correct on its own?</td>
+</tr>
+<tr class="even">
+<td>Pairwise</td>
+<td>PNR (correct pairs ÷ wrong pairs)</td>
+<td>Is the order correct?</td>
+</tr>
+<tr class="odd">
+<td>Listwise</td>
+<td>DCG@k, NDCG@k</td>
+<td>Is the order correct, with more weight at the top?</td>
+</tr>
+</tbody>
+</table>
+<p><strong>PNR on the running example.</strong></p>
+<ul>
+<li>Model 1 (A, D, B, C): correct pairs B&gt;C, D&gt;C, A&gt;C; wrong pairs B&gt;D, B&gt;A, D&gt;A. PNR = 3 / 3 = <strong>1.0</strong>.</li>
+<li>Model 2 (B, D, A, C): all 6 pairs correct. PNR = 6 / 0 = <strong>∞</strong> (perfect).</li>
+</ul>
+<p><strong>DCG and NDCG.</strong></p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Ctext%7BDCG@%7Dk%20=%20%5Csum_%7Bi=1%7D%5E%7Bk%7D%5Cfrac%7B%5Ctext%7Bgain%7D(y_i)%7D%7B%5Clog_2(i+1)%7D,%20%5Cqquad%20%5Ctext%7BNDCG@%7Dk%20=%20%5Cfrac%7B%5Ctext%7BDCG@%7Dk%7D%7B%5Ctext%7BIDCG@%7Dk%7D%0A"></p>
+<p>IDCG is the DCG of the ideal order. Position discounts: 1.00, 0.63, 0.50, 0.43.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Linear gain (gain = y)</th>
+<th>Exponential gain (gain = 2^y − 1)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Gains B, D, A, C</td>
+<td>6.1, 1.1, 0.1, 0</td>
+<td>67.6, 1.14, 0.07, 0</td>
+</tr>
+<tr class="even">
+<td>IDCG@4</td>
+<td>6.84</td>
+<td>68.36</td>
+</tr>
+<tr class="odd">
+<td>Model 1 DCG@4</td>
+<td>0.1 + 0.69 + 3.05 = 3.84</td>
+<td>0.07 + 0.72 + 33.8 = 34.6</td>
+</tr>
+<tr class="even">
+<td>Model 1 NDCG@4</td>
+<td><strong>0.56</strong></td>
+<td><strong>0.51</strong></td>
+</tr>
+<tr class="odd">
+<td>Model 2 NDCG@4</td>
+<td><strong>1.0</strong></td>
+<td><strong>1.0</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Exponential gain makes the order much more important than the click. With it, one order is worth about 940 clicks, not 61.</p>
+<p><strong>Why listwise metrics win.</strong> Two rankings can have the same PNR but differ in where the mistakes are. Users care most about the top of the list, so only NDCG tells them apart.</p>
+<p><strong>IDCG trap.</strong> When you compare two models, compute IDCG from the union of both models’ products. If each model uses its own IDCG, a worse list can get a higher NDCG.</p>
+</section>
+<section id="match-the-loss-to-the-metric" class="level1">
+<h1>2.5 Match the loss to the metric</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>If you report…</th>
+<th>Train with…</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>MSE, AUC</td>
+<td>Pointwise</td>
+<td>Same target</td>
+</tr>
+<tr class="even">
+<td>PNR</td>
+<td>Pairwise (RankNet)</td>
+<td>It directly maximizes correct pairs</td>
+</tr>
+<tr class="odd">
+<td>NDCG</td>
+<td>Listwise (LambdaRank or softmax)</td>
+<td>It weights the top of the list</td>
+</tr>
+</tbody>
+</table>
+<p>Use <strong>the same gain</strong> in the loss and the metric. If the loss treats an order as 6.1 but NDCG uses 2^6.1 − 1 = 67.6, the two layers disagree on what an order is worth.</p>
+</section>
+<section id="the-gaps-between-the-layers" class="level1">
+<h1>2.6 The gaps between the layers</h1>
+<p><strong>Gap 1: loss → offline metric (small).</strong></p>
+<ul>
+<li><strong>The loss is a surrogate.</strong> Smooth losses stand in for a sorting metric. Lower loss usually means higher NDCG, but not always.</li>
+<li><strong>No position weight.</strong> Pointwise and plain RankNet treat every mistake the same. LambdaRank tracks NDCG better because it weights each pair by |ΔNDCG|.</li>
+<li><strong>Gain mismatch.</strong> The loss and the metric use different gains (see 2.5).</li>
+</ul>
+<p><strong>Gap 2: offline metric → online metric (large).</strong></p>
+<ol type="1">
+<li><strong>No price in the label.</strong> A $40 order and a $4,000 order both get y = 6.1. Suppose a new model improves 90 small-basket queries and hurts 10 large-basket queries. Mean NDCG goes up, but GMV goes down.</li>
+<li><strong>Equal weight vs.&nbsp;dollar weight.</strong> NDCG gives every query the same weight. GMV is dominated by high-value queries and high-value buyers.</li>
+<li><strong>Logged data only.</strong> NDCG can score only products the old model showed. If the new model puts an unseen product at position 1, that product gets label 0, even if the user would have bought it. So offline NDCG favors models that copy the old ranking.</li>
+<li><strong>Position bias.</strong> Products at the top got more clicks because they were at the top. The labels carry the old model’s bias.</li>
+<li><strong>Orders are rare.</strong> Most lists have no order, so NDCG is driven mostly by clicks. GMV is driven only by orders.</li>
+<li><strong>Effects outside the list.</strong> GMV also depends on basket size, repeat orders, retention, and supply. One ranked list cannot show these.</li>
+</ol>
+</section>
+<section id="how-to-close-the-gaps" class="level1">
+<h1>2.7 How to close the gaps</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Gap</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>No price in the label</td>
+<td>Make the order weight value-aware, for example 5 × log(1 + price). Or add a head that predicts P(order) and rank by expected revenue = P(order) × price.</td>
+</tr>
+<tr class="even">
+<td>Equal-weight queries</td>
+<td>Also report a revenue-weighted metric, such as NDCG weighted by query GMV, or revenue@k.</td>
+</tr>
+<tr class="odd">
+<td>Offline does not predict online</td>
+<td>Over past A/B tests, check whether the offline lift predicted the online lift. If it did not, the offline metric is not a reliable gate.</td>
+</tr>
+<tr class="even">
+<td>Logged data and position bias</td>
+<td>Use position-bias correction or inverse propensity weighting (IPS). Use interleaving for faster, cleaner online reads.</td>
+</tr>
+<tr class="odd">
+<td>A model can win in a bad way</td>
+<td>Add guardrails: relevance, conversion rate, orders per search. Monitor the share of top-k results in each relevance grade.</td>
+</tr>
+</tbody>
+</table>
+<p>Wang’s book makes the same points for e-commerce. The ranking goal is user satisfaction <strong>and</strong> revenue. Product ranking uses expected revenue = price × conversion rate. Conversion rate and GMV are the most important metrics.</p>
+</section>
+<section id="interview-frame" class="level1">
+<h1>2.8 Interview frame</h1>
+<p>When an interviewer asks “How do you train and evaluate a ranker?”, walk down the three layers:</p>
+<ol type="1">
+<li><strong>Label:</strong> what counts as a good result, and how much? (click, cart, order, with weights)</li>
+<li><strong>Loss:</strong> how does the model learn the order? (pointwise baseline → pairwise or listwise)</li>
+<li><strong>Offline gate:</strong> which metric must go up before an A/B test? (NDCG@k with the same gain as the loss)</li>
+<li><strong>Online decision:</strong> which business metric decides the launch? (GMV, conversion, retention, with guardrails)</li>
+<li><strong>Alignment:</strong> how do you know the offline metric predicts the online metric?</li>
+</ol>
+<p><strong>30-second answer:</strong> “I start with a label that reflects value: clicks, carts and orders, with orders weighted most. I begin with a pointwise baseline, then move to a listwise loss like LambdaRank, because it puts more weight on the top of the list. Offline, I gate on NDCG@k with the same gain as the training label. Online, GMV and conversion decide the launch, with relevance as a guardrail. I also check, across past experiments, that offline NDCG lift actually predicts online GMV lift. If it does not, I fix the label first, often by adding price.”</p>
+</section>
+<section id="sources-chapter-2" class="level1">
+<h1>Sources (Chapter 2)</h1>
+<ul>
+<li>Shusen Wang, Search Engine Technology (《搜索引擎技术》) — ch.&nbsp;3.4 ranking tasks, ch.&nbsp;4 offline metrics (PNR, DCG, NDCG, the IDCG trap), ch.&nbsp;19–20 fusion-model targets and pointwise/pairwise/listwise training, ch.&nbsp;1 and 14 e-commerce objectives (GMV, price × conversion rate).</li>
+<li>Chris Burges, <a href="https://www.microsoft.com/en-us/research/publication/from-ranknet-to-lambdarank-to-lambdamart-an-overview/">From RankNet to LambdaRank to LambdaMART: An Overview</a>, Microsoft Research, 2010 — RankNet loss and the |ΔNDCG| weighting.</li>
+</ul>
+
+
+
+</section>
+
+ ]]></description>
+  <category>Recsys</category>
+  <category>Ranking</category>
+  <category>Playbook</category>
+  <guid>https://zzfb.github.io/posts/rec-search-playbook-ch2/</guid>
+  <pubDate>Fri, 06 Nov 2026 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>User Sequence Foundation Model</title>
   <dc:creator>Zhong Zhang</dc:creator>
